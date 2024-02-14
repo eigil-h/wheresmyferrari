@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>20</x>
+      <y>20</y>
+      <w>170</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>valign=bottom
+copyright @ 2022
+blah blah
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>60</y>
+      <w>130</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>´Etris</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>110</y>
+      <w>130</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>´Rakeout</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>160</y>
+      <w>130</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>´Acman</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>210</y>
+      <w>130</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>Sideless</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>300</x>
+      <y>20</y>
+      <w>150</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>Étris
+--
+Tetrominos
+Timer
+Random
+Score
+Levels
+Keyb keys
+joystick?</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>520</x>
+      <y>20</y>
+      <w>170</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>´Rakeout
+--
+Bricks
+Ball
+Pad
+Score
+Maps
+Joystick</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>760</x>
+      <y>20</y>
+      <w>170</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>´Acman
+--
+'AI'
+1 Map
+Joystick</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1000</x>
+      <y>20</y>
+      <w>170</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>Sideless
+--
+Left to right
+chased by something, langoliers?
+obstacles
+helpers?
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>20</x>
+      <y>440</y>
+      <w>220</w>
+      <h>390</h>
+    </coordinates>
+    <panel_attributes>Speedy22 (a Speed clone)
+--
+tmap walls
+bsp?
+shading
+distance</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
