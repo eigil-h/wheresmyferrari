@@ -5,6 +5,8 @@
 #include <devices/inputevent.h>
 #include <devices/keyboard.h>
 
-struct MsgPort* init_keyb(struct InputEvent*);
+struct MsgPort* init_keyb(VOID);
+VOID requestKeybEvent(struct InputEvent*);
+BOOL pokeKeybEvent(VOID);
 
 #endif

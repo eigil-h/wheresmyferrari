@@ -95,7 +95,7 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 			pic->depth = bmhd->bmh_Depth;
 
 			//printf("BMHD %ld\n", sp->sp_Size);
-			print_bmhd(bmhd);
+			//print_bmhd(bmhd);
 		} else {
 			puts("No BMHD");
 		}
@@ -151,7 +151,7 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 		if(body_compressed) {
 			decompress(body, pic->bitmap->Planes, body_length, RASSIZE(pic->width, pic->height));
 		} else {
-			print_bitmap_data(pic->bitmap);
+			//print_bitmap_data(pic->bitmap);
 
 			memcpy(pic->bitmap->Planes[0], body, body_length);
 		}

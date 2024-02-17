@@ -33,7 +33,6 @@ static struct InputEvent keyb_event;
 int main(void)
 {
 	BOOL ok;
-	struct Window* window;
 	struct Screen* screen;
 
 	atexit(exit_handler);
@@ -55,11 +54,11 @@ int main(void)
 		bg_picture.palette4->data,
 		bg_picture.palette4->length);
 
-	window = open_window(screen);
+	// window = open_window(screen);
 
-	keyb_port = init_keyb(&keyb_event);
+	keyb_port = init_keyb();
 
-	main_turbo(window);
+	main_turbo(NULL);
 
 	exit(EXIT_SUCCESS);
 }
@@ -70,37 +69,20 @@ int main(void)
 static void main_turbo(struct Window* window)
 {
 	BOOL loop = TRUE;
-	struct IntuiMessage* msg;
 	struct Message* keyb_msg;
-	ULONG win_sig = 1L << window->UserPort->mp_SigBit;
 	ULONG keyb_sig = 1L << keyb_port->mp_SigBit;
-
-	if (window == NULL)
-		return;
+	ULONG signals;
 
 	while (loop) {
-		ULONG signals = Wait(win_sig | keyb_sig);
-
-		if(signals & win_sig) {
-			while(loop && (msg = GT_GetIMsg(window->UserPort)) != NULL) {
-				switch(msg->Class) {
-					case IDCMP_CLOSEWINDOW:
-	    			loop = FALSE;
-						break;
-
-					default:
-						break;
-	    	}
-
-				GT_ReplyIMsg(msg);
-			}
-		}
+		requestKeybEvent(&keyb_event);
+		signals = Wait(keyb_sig);
 
 		if(signals & keyb_sig) {
 			while(loop && (keyb_msg = GetMsg(keyb_port)) != NULL) {
-				ReplyMsg(keyb_msg);
-				printf("0x%08X", keyb_msg);
+				loop = FALSE;
 			}
+		} else {
+			puts("WTF");
 		}
 	}
 }
@@ -128,7 +110,6 @@ static void verify_bg_picture(BOOL loaded)
 
 static void exit_handler(void)
 {
-	close_window();
 	close_screen();
 
 	FreeVec(bg_picture.palette4);
