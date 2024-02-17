@@ -1,5 +1,6 @@
 #include <stdlib.h>
-
+#include <devices/inputevent.h>
+#include <devices/keyboard.h>
 #include "datatypes.h"
 #include "input.h"
 
@@ -16,6 +17,7 @@ static VOID exit_keyb_handler(VOID);
  */
 static struct MsgPort* keyb_reply_port;
 static struct IOStdReq* keyb_io_request;
+static struct InputEvent keyb_event;
 
 /*
  * Public
@@ -49,10 +51,10 @@ struct MsgPort* init_keyb(VOID)
 	return keyb_reply_port;
 }
 
-VOID requestKeybEvent(struct InputEvent* keyb_event)
+VOID requestKeybEvent(VOID)
 {
 	keyb_io_request->io_Command = KBD_READEVENT;
-	keyb_io_request->io_Data = (APTR) keyb_event;
+	keyb_io_request->io_Data = (APTR) &keyb_event;
 	keyb_io_request->io_Length = sizeof(struct InputEvent);
 
 	SendIO((struct IORequest *) keyb_io_request);

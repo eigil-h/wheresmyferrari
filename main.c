@@ -8,13 +8,12 @@
 #include "utils.h"
 #include "io.h"
 #include "screen.h"
-#include "window.h"
 #include "input.h"
 
 /*
  * Protos
  */
-static void main_turbo(struct Window*);
+static void main_turbo(struct MsgPort*);
 static void verify_bg_picture(BOOL loaded);
 static void exit_handler(void);
 
@@ -24,8 +23,6 @@ static void exit_handler(void);
 static Error error;
 static Picture bg_picture;
 static LibraryVersion library_version;
-static struct MsgPort* keyb_port;
-static struct InputEvent keyb_event;
 
 /*
  * Public
@@ -34,6 +31,8 @@ int main(void)
 {
 	BOOL ok;
 	struct Screen* screen;
+	struct MsgPort* keyb_port;
+
 
 	atexit(exit_handler);
 
@@ -44,7 +43,7 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
-	ok = load_picture("EtrisBG#2", &bg_picture, &error);
+	ok = load_picture("TetBG", &bg_picture, &error);
 
 	verify_bg_picture(ok);
 
@@ -54,11 +53,9 @@ int main(void)
 		bg_picture.palette4->data,
 		bg_picture.palette4->length);
 
-	// window = open_window(screen);
-
 	keyb_port = init_keyb();
 
-	main_turbo(NULL);
+	main_turbo(keyb_port);
 
 	exit(EXIT_SUCCESS);
 }
@@ -66,7 +63,7 @@ int main(void)
 /*
  * Private
  */
-static void main_turbo(struct Window* window)
+static void main_turbo(struct MsgPort* keyb_port)
 {
 	BOOL loop = TRUE;
 	struct Message* keyb_msg;
@@ -74,7 +71,7 @@ static void main_turbo(struct Window* window)
 	ULONG signals;
 
 	while (loop) {
-		requestKeybEvent(&keyb_event);
+		requestKeybEvent();
 		signals = Wait(keyb_sig);
 
 		if(signals & keyb_sig) {

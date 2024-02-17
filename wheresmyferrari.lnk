@@ -1,4 +1,4 @@
-FROM LIB:c.o "window.o"+"utils.o"+"screen.o"+"input.o"+"main.o"+"io.o"
+FROM LIB:c.o "main.o"+"input.o"+"utils.o"+"screen.o"+"io.o"
 TO "wheresmyferrari"
 LIB LIB:sc.lib LIB:amiga.lib
 
