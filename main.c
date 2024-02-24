@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include "datatypes.h"
 #include "utils.h"
+#include "view.h"
 #include "io.h"
-#include "screen.h"
 #include "input.h"
 
 /*
@@ -29,8 +29,10 @@ static LibraryVersion library_version;
  */
 int main(void)
 {
+	ViewRequest vreq = {
+		320, 512, 4, NULL
+	};
 	BOOL ok;
-	struct Screen* screen;
 	struct MsgPort* keyb_port;
 
 
@@ -46,12 +48,11 @@ int main(void)
 	ok = load_picture("TetBG", &bg_picture, &error);
 
 	verify_bg_picture(ok);
+	
+	vreq.palette4 = bg_picture.palette4;
+	vreq.bitmap = bg_picture.bitmap;
 
-	screen = open_screen(bg_picture.bitmap);
-
-	LoadRGB4(&screen->ViewPort,
-		bg_picture.palette4->data,
-		bg_picture.palette4->length);
+	make_view(&vreq);
 
 	keyb_port = init_keyb();
 
@@ -107,8 +108,6 @@ static void verify_bg_picture(BOOL loaded)
 
 static void exit_handler(void)
 {
-	close_screen();
-
 	FreeVec(bg_picture.palette4);
 
 	free_bitmap(bg_picture.bitmap, 0, 0);
