@@ -2,7 +2,7 @@
 #include <devices/inputevent.h>
 #include <devices/keyboard.h>
 #include "datatypes.h"
-#include "input.h"
+#include "keyb.h"
 
 #define KEYBOARD_DEVICE_NAME "keyboard.device"
 #define IO_STILL_IN_PROGRESS NULL

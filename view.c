@@ -2,7 +2,10 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <graphics/videocontrol.h>
+#include <hardware/custom.h>
 #include "view.h"
+
+extern struct Custom __far custom;
 
 /*
  * Private objects
@@ -21,6 +24,7 @@ static struct DimensionInfo dimquery;
  * Private Protos
  */
 static VOID store_oldview(VOID);
+static VOID takeSprite0(VOID);
 static VOID exit_handler(VOID);
 
 /*
@@ -120,6 +124,8 @@ VOID make_view(ViewRequest* view_request)
 	}
 
 	LoadView(&view);
+
+	takeSprite0();
 }
 
 /*
@@ -139,6 +145,12 @@ static VOID store_oldview(VOID)
 	oldview = gfx_base->ActiView;
 
 	CloseLibrary((struct Library*) gfx_base);
+}
+
+static VOID takeSprite0(VOID)
+{
+	FreeSprite(0);
+	FreeSprite(1);
 }
 
 static VOID exit_handler(VOID)

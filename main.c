@@ -8,7 +8,7 @@
 #include "utils.h"
 #include "view.h"
 #include "io.h"
-#include "input.h"
+#include "keyb.h"
 
 /*
  * Protos
