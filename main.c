@@ -9,6 +9,7 @@
 #include "view.h"
 #include "io.h"
 #include "keyb.h"
+#include "input.h"
 
 /*
  * Protos
@@ -53,6 +54,9 @@ int main(void)
 	vreq.bitmap = bg_picture.bitmap;
 
 	make_view(&vreq);
+	
+	open_input_device();
+	add_input_handler();
 
 	keyb_port = init_keyb();
 
