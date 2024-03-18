@@ -47,6 +47,11 @@ struct MsgPort* init_keyb(VOID)
 		exit(EXIT_KEYB_OPEN_DEVICE);
 	}
 
+	keyb_io_request->io_Command = CMD_CLEAR;
+	keyb_io_request->io_Data = (APTR) &keyb_event;
+	keyb_io_request->io_Length = sizeof(struct InputEvent);
+
+	DoIO((struct IORequest *) keyb_io_request);
 
 	return keyb_reply_port;
 }

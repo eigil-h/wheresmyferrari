@@ -23,7 +23,6 @@ static void exit_handler(void);
  */
 static Error error;
 static Picture bg_picture;
-static LibraryVersion library_version;
 
 /*
  * Public
@@ -39,12 +38,14 @@ int main(void)
 
 	atexit(exit_handler);
 
-	ok = init_library_version("exec.library", &library_version);
-
-	if(!(ok && library_version.major >= 39)) {
+	if(!(SysBase->LibNode.lib_Version >= 39)) {
 		puts("Cant verify AmigaOS 3.0+");
 		exit(EXIT_FAILURE);
 	}
+	
+	open_input_device();
+	add_input_handler();
+	// keyb_port = init_keyb();
 
 	ok = load_picture("TetBG", &bg_picture, &error);
 
@@ -54,13 +55,12 @@ int main(void)
 	vreq.bitmap = bg_picture.bitmap;
 
 	make_view(&vreq);
-	
-	open_input_device();
-	add_input_handler();
 
-	keyb_port = init_keyb();
+	// main_turbo(keyb_port);
 
-	main_turbo(keyb_port);
+	Delay(250);
+
+	print_it();
 
 	exit(EXIT_SUCCESS);
 }
@@ -75,16 +75,18 @@ static void main_turbo(struct MsgPort* keyb_port)
 	ULONG keyb_sig = 1L << keyb_port->mp_SigBit;
 	ULONG signals;
 
+	requestKeybEvent();
+
 	while (loop) {
-		requestKeybEvent();
 		signals = Wait(keyb_sig);
 
 		if(signals & keyb_sig) {
-			while(loop && (keyb_msg = GetMsg(keyb_port)) != NULL) {
+			while((keyb_msg = GetMsg(keyb_port)) != NULL) {
 				loop = FALSE;
 			}
-		} else {
-			puts("WTF");
+
+			if(loop)
+				requestKeybEvent();
 		}
 	}
 }
