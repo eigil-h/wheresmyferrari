@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<diagram program="umlet" version="14.3.0">
+<diagram program="umlet" version="15.1">
   <zoom_level>10</zoom_level>
   <element>
     <id>UMLClass</id>
@@ -75,7 +75,7 @@ Random
 Score
 Levels
 Keyb keys
-joystick?</panel_attributes>
+joystick</panel_attributes>
     <additional_attributes/>
   </element>
   <element>

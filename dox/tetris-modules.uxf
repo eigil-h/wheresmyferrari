@@ -4,7 +4,7 @@
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>50</x>
+      <x>30</x>
       <y>410</y>
       <w>150</w>
       <h>200</h>
@@ -20,7 +20,7 @@ main_turbo
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>300</x>
+      <x>280</x>
       <y>300</y>
       <w>150</w>
       <h>200</h>
@@ -34,35 +34,7 @@ load_picture</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>540</x>
-      <y>300</y>
-      <w>150</w>
-      <h>200</h>
-    </coordinates>
-    <panel_attributes>screen
---
---
-open_screen</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>750</x>
-      <y>300</y>
-      <w>150</w>
-      <h>200</h>
-    </coordinates>
-    <panel_attributes>window
---
---
-open_window</panel_attributes>
-    <additional_attributes/>
-  </element>
-  <element>
-    <id>UMLClass</id>
-    <coordinates>
-      <x>50</x>
+      <x>30</x>
       <y>30</y>
       <w>150</w>
       <h>200</h>
@@ -71,6 +43,7 @@ open_window</panel_attributes>
 --
 palette
 image
+input_event_data
 --
 </panel_attributes>
     <additional_attributes/>
@@ -78,7 +51,7 @@ image
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>180</x>
+      <x>160</x>
       <y>140</y>
       <w>230</w>
       <h>180</h>
@@ -89,29 +62,7 @@ image
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>380</x>
-      <y>140</y>
-      <w>260</w>
-      <h>180</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;.</panel_attributes>
-    <additional_attributes>10.0;10.0;240.0;10.0;240.0;160.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>610</x>
-      <y>140</y>
-      <w>260</w>
-      <h>180</h>
-    </coordinates>
-    <panel_attributes>lt=&lt;.</panel_attributes>
-    <additional_attributes>10.0;10.0;240.0;10.0;240.0;160.0</additional_attributes>
-  </element>
-  <element>
-    <id>Relation</id>
-    <coordinates>
-      <x>110</x>
+      <x>90</x>
       <y>220</y>
       <w>30</w>
       <h>210</h>
@@ -122,7 +73,7 @@ image
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>190</x>
+      <x>170</x>
       <y>490</y>
       <w>210</w>
       <h>110</h>
@@ -133,7 +84,7 @@ image
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>370</x>
+      <x>350</x>
       <y>490</y>
       <w>250</w>
       <h>110</h>
@@ -144,12 +95,191 @@ image
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>550</x>
+      <x>530</x>
       <y>490</y>
       <w>280</w>
       <h>110</h>
     </coordinates>
     <panel_attributes>lt=&lt;.</panel_attributes>
     <additional_attributes>260.0;10.0;260.0;90.0;10.0;90.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>590</x>
+      <y>140</y>
+      <w>260</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;240.0;10.0;240.0;160.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>360</x>
+      <y>140</y>
+      <w>260</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;240.0;10.0;240.0;160.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>520</x>
+      <y>300</y>
+      <w>150</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>input
+--
+--
+add_input_handler</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>730</x>
+      <y>300</y>
+      <w>150</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>view
+--
+--
+open_view</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>30</x>
+      <y>640</y>
+      <w>260</w>
+      <h>300</h>
+    </coordinates>
+    <panel_attributes>main_turbo
+
+action_state[left,right,up,down,fire]
+commands[exit, restart]
+
+while(TRUE) {
+  while(msg = GetMsg(iport)) {
+    if command
+      return command;
+    update action
+  }
+  ts = GetSysTime()
+  render_frame(ts, input_state)
+  WaitTOF();
+}</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>690</x>
+      <y>640</y>
+      <w>140</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>Level
+--
+Speed (penalty)
+Bonus (reward)
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>480</x>
+      <y>640</y>
+      <w>190</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>Gamestat
+--
+Hiscore, persisted
+Score
+Level
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>330</x>
+      <y>760</y>
+      <w>140</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>Playground
+--
+rows
+columns
+grid [rows, colums]
+cell blocktype[x]</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>480</x>
+      <y>760</y>
+      <w>160</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>Tetramino
+--
+blocktype[x]
+location (row, column)
+orientation (0, 3)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>850</x>
+      <y>640</y>
+      <w>540</w>
+      <h>300</h>
+    </coordinates>
+    <panel_attributes>render
+
+render updates only, not the entire screen
+bg image is 4 bitplanes, the rest the 5th?
+(sprites palette is from 17-32)
+
+init(bg image, game data)
+
+render_frame(input_state) {
+	check if it's time to move or rotate the tetramino
+	current_ts - prev_ts vs Speed (see Level)
+	check collision -&gt; update grid
+	check rows if filled -&gt; removal animation + update grid
+}
+
+:figure out:
+active tetramino -&gt; sprites
+filled cells -&gt; bobs
+dual playfield</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>330</x>
+      <y>640</y>
+      <w>140</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>Rules
+--
+score to level map</panel_attributes>
+    <additional_attributes/>
   </element>
 </diagram>
