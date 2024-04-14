@@ -33,7 +33,7 @@ static Picture bg_picture;
 int main(void)
 {
 	ViewRequest vreq = {
-		320, 512, 4, NULL
+		320, 512, 5, NULL
 	};
 	BOOL ok;
 	struct MsgPort* input_port;

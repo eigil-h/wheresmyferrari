@@ -1,4 +1,4 @@
-FROM LIB:c.o "game_tetris.o"+"utils.o"+"main.o"+"io.o"+"view.o"+"input.o"
+FROM LIB:c.o "main.o"+"view.o"+"utils.o"+"io.o"+"game_tetris.o"+"input.o"
 TO "wheresmyferrari"
 LIB LIB:sc.lib LIB:amiga.lib
 

@@ -41,7 +41,7 @@ VOID make_view(ViewRequest* view_request)
 	store_oldview();
 
 	InitView(&view);
-	view.Modes |= LACE;
+	view.Modes |= LACE | SPRITES;
 
 	if(!(vextra = GfxNew(VIEW_EXTRA_TYPE))) {
 		exit(VIEW_ERROR_VIEW_EXTRA);
@@ -54,17 +54,6 @@ VOID make_view(ViewRequest* view_request)
 		exit(VIEW_ERROR_OPEN_MONITOR);
 	}
 
-/*
-	if(!(bitmap = AllocBitMap(
-		view_request->width,
-		view_request->height,
-		view_request->depth,
-		BMF_DISPLAYABLE | BMF_INTERLEAVED,
-		NULL
-	))) {
-		exit(VIEW_ERROR_ALLOC_BITMAP);
-	}
-*/	
 	rasinfo.BitMap = view_request->bitmap;
 
 	InitVPort(&viewport);
@@ -73,7 +62,7 @@ VOID make_view(ViewRequest* view_request)
 	viewport.DWidth = view_request->width;
 	viewport.DHeight = view_request->height;
 	viewport.DxOffset = 160;
-	viewport.Modes = HIRES | LACE;
+	viewport.Modes = HIRES | LACE | SPRITES;
 
 	if(!(vpextra = GfxNew(VIEWPORT_EXTRA_TYPE))) {
 		exit(VIEW_ERROR_VIEWPORT_EXTRA);
