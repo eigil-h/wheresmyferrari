@@ -37,6 +37,7 @@ int main(void)
 	};
 	BOOL ok;
 	struct MsgPort* input_port;
+	ViewPort* viewport;
 
 
 	atexit(exit_handler);
@@ -58,7 +59,8 @@ int main(void)
 	vreq.palette4 = bg_picture.palette4;
 	vreq.bitmap = bg_picture.bitmap;
 
-	make_view(&vreq);
+	viewport = make_view(&vreq);
+	init_game(viewport);
 
 	main_turbo(input_port);
 

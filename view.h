@@ -17,7 +17,7 @@ typedef struct ViewRequest
   struct BitMap* bitmap;
 } ViewRequest;
 
-VOID make_view(ViewRequest*);
+ViewPort* make_view(ViewRequest*);
 
 #define VIEW_ERROR                0xA0
 #define VIEW_ERROR_VIEW_EXTRA     VIEW_ERROR

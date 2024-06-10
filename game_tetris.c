@@ -7,6 +7,7 @@
 /*
  * Private objects
  */
+static ViewPort* viewport;
 static struct SimpleSprite tetromino_sprite[NUM_SPRITES];
 static BrickImageH1 __chip brick_image_h1;
 static BrickImageH2 __chip brick_image_h2;
@@ -41,30 +42,31 @@ static void init_sprites(void);
 /*
  * Public functions
  */
-void init_game(void)
+void init_game(ViewPort* vp)
 {
 	atexit(exit_handler);
+
+	viewport = vp;
 
 	init_sprites();
 }
 
-void render_frame(struct ViewPort* view_port, InputState* input_state)
+void render_frame(InputState* input_state)
 {
-
 	switch(game_state)
 	{
 		case GS_BEFORE:
 			tetromino_sprite[0].height = 16;
-			ChangeSprite(view_port, &tetromino_sprite[0], (void*) &brick_image_h1);
-			MoveSprite(view_port, &tetromino_sprite[0], 0, 0);
+			ChangeSprite(viewport, &tetromino_sprite[0], (void*) &brick_image_h1);
+			MoveSprite(viewport, &tetromino_sprite[0], 0, 0);
 
-			tetromino_sprite[1].height = 32;
-			ChangeSprite(view_port, &tetromino_sprite[1], (void*) &brick_image_h2);
-			MoveSprite(view_port, &tetromino_sprite[1], 16, 0);
+			tetromino_sprite[1].height = 2 * 16;
+			ChangeSprite(viewport, &tetromino_sprite[1], (void*) &brick_image_h2);
+			MoveSprite(viewport, &tetromino_sprite[1], 16, 0);
 
-			tetromino_sprite[2].height = 16;
-			ChangeSprite(view_port, &tetromino_sprite[2], (void*) &brick_image_h1);
-			MoveSprite(view_port, &tetromino_sprite[2], 32, 0);
+			tetromino_sprite[2].height = 3 * 16;
+			ChangeSprite(viewport, &tetromino_sprite[2], (void*) &brick_image_h3);
+			MoveSprite(viewport, &tetromino_sprite[2], 32, 0);
 
 			game_state = GS_PLAY;
 

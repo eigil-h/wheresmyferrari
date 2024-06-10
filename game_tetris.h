@@ -9,8 +9,8 @@
 
 #include "datatypes.h"
 
-void init_game(void);
-void render_frame(struct ViewPort*, InputState*);
+void init_game(ViewPort*);
+void render_frame(InputState*);
 
 typedef enum
 {

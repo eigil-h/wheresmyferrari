@@ -9,6 +9,7 @@
 typedef struct MsgPort MsgPort;
 typedef struct Message Message;
 typedef struct Interrupt Interrupt;
+typedef struct ViewPort ViewPort;
 
 
 typedef struct Palette4

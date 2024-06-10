@@ -30,7 +30,7 @@ static VOID exit_handler(VOID);
 /*
  * Public functions
  */
-VOID make_view(ViewRequest* view_request)
+ViewPort* make_view(ViewRequest* view_request)
 {
 	ULONG mode_id = DEFAULT_MONITOR_ID | HIRESLACE_KEY;
 	struct RasInfo rasinfo = {0};
@@ -115,6 +115,8 @@ VOID make_view(ViewRequest* view_request)
 	LoadView(&view);
 
 	takeSprite0();
+
+	return &viewport;
 }
 
 /*
