@@ -9,10 +9,7 @@
  */
 static ViewPort* viewport;
 static struct SimpleSprite tetromino_sprite[NUM_SPRITES];
-static BrickImageH1 __chip brick_image_h1;
-static BrickImageH2 __chip brick_image_h2;
-static BrickImageH3 __chip brick_image_h3;
-static BrickImageH4 __chip brick_image_h4;
+static BrickImage __chip brick_image[NUM_SPRITES];
 static UWORD brick_bitmap[BRICK_LEN] = {
 	0xffff, 0x0000,
 	0x8001, 0x0000,
@@ -31,6 +28,7 @@ static UWORD brick_bitmap[BRICK_LEN] = {
 	0x8001, 0x0000,
 	0xffff, 0x0000
 };
+
 static GameState game_state = GS_BEFORE;
 
 /*
@@ -38,6 +36,8 @@ static GameState game_state = GS_BEFORE;
  */
 static void exit_handler(void);
 static void init_sprites(void);
+static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y);
+// static void render_tetramino();
 
 /*
  * Public functions
@@ -56,17 +56,9 @@ void render_frame(InputState* input_state)
 	switch(game_state)
 	{
 		case GS_BEFORE:
-			tetromino_sprite[0].height = 16;
-			ChangeSprite(viewport, &tetromino_sprite[0], (void*) &brick_image_h1);
-			MoveSprite(viewport, &tetromino_sprite[0], 0, 0);
-
-			tetromino_sprite[1].height = 2 * 16;
-			ChangeSprite(viewport, &tetromino_sprite[1], (void*) &brick_image_h2);
-			MoveSprite(viewport, &tetromino_sprite[1], 16, 0);
-
-			tetromino_sprite[2].height = 3 * 16;
-			ChangeSprite(viewport, &tetromino_sprite[2], (void*) &brick_image_h3);
-			MoveSprite(viewport, &tetromino_sprite[2], 32, 0);
+			render_sprite(0, 1, 0, 1);
+			render_sprite(1, 2, 1, 1);
+			render_sprite(2, 1, 2, 1);
 
 			game_state = GS_PLAY;
 
@@ -93,21 +85,25 @@ static void init_sprites(void)
 	{
 		if(GetSprite(&tetromino_sprite[i], i) != i)
 			exit(-1);
+
+		memcpy(brick_image[i].data, brick_bitmap, BRICK_SIZ);
+		memcpy(&brick_image[i].data[BRICK_LEN], brick_bitmap, BRICK_SIZ);
+		memcpy(&brick_image[i].data[2 * BRICK_LEN], brick_bitmap, BRICK_SIZ);
+		memcpy(&brick_image[i].data[3 * BRICK_LEN], brick_bitmap, BRICK_SIZ);
+
+		ChangeSprite(viewport, &tetromino_sprite[i], (void*) &brick_image[i]);
 	}
+}
 
-	memcpy(brick_image_h1.data, brick_bitmap, BRICK_SIZ);
-
-	memcpy(brick_image_h2.data, brick_bitmap, BRICK_SIZ);
-	memcpy(&brick_image_h2.data[BRICK_LEN], brick_bitmap, BRICK_SIZ);
-
-	memcpy(brick_image_h3.data, brick_bitmap, BRICK_SIZ);
-	memcpy(&brick_image_h3.data[BRICK_LEN], brick_bitmap, BRICK_SIZ);
-	memcpy(&brick_image_h3.data[2 * BRICK_LEN], brick_bitmap, BRICK_SIZ);
-
-	memcpy(brick_image_h4.data, brick_bitmap, BRICK_SIZ);
-	memcpy(&brick_image_h4.data[BRICK_LEN], brick_bitmap, BRICK_SIZ);
-	memcpy(&brick_image_h4.data[2 * BRICK_LEN], brick_bitmap, BRICK_SIZ);
-	memcpy(&brick_image_h4.data[3 * BRICK_LEN], brick_bitmap, BRICK_SIZ);
+static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y)
+{
+	tetromino_sprite[sp].height = h * BRICK_HEIGHT;
+	MoveSprite(
+		viewport,
+		&tetromino_sprite[sp],
+		(x * BRICK_WIDTH) << 1, 
+		(y * BRICK_HEIGHT) << 1
+	);
 }
 
 static void exit_handler(void)

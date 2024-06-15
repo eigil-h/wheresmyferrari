@@ -3,6 +3,7 @@
 
 #define NUM_SPRITES 4
 #define BRICK_HEIGHT 16
+#define BRICK_WIDTH 16
 #define SPRITE_DEPTH 2
 #define BRICK_LEN (SPRITE_DEPTH * BRICK_HEIGHT)
 #define BRICK_SIZ (sizeof(UWORD) * BRICK_LEN)
@@ -20,40 +21,17 @@ typedef enum
 	GS_AFTER
 } GameState;
 
-typedef struct
-{
-  UBYTE what; // 7 shapes in 4 rotational states
-} Tetramino;
+typedef void (*TetraminoRenderer)(UBYTE x, UBYTE y);
+typedef TetraminoRenderer Tetramino[4][7];
 
 typedef BYTE Brick; // <0 is empty cell
 
 typedef struct
 {
 	UWORD posctl[2];
-	UWORD data[BRICK_LEN];
-	UWORD reserved[2];
-} BrickImageH1;
-
-typedef struct
-{
-	UWORD posctl[2];
-	UWORD data[2 * BRICK_LEN];
-	UWORD reserved[2];
-} BrickImageH2;
-
-typedef struct
-{
-	UWORD posctl[2];
-	UWORD data[3 * BRICK_LEN];
-	UWORD reserved[2];
-} BrickImageH3;
-
-typedef struct
-{
-	UWORD posctl[2];
 	UWORD data[4 * BRICK_LEN];
 	UWORD reserved[2];
-} BrickImageH4;
+} BrickImage;
 
 typedef struct
 {
