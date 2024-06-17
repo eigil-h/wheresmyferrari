@@ -12,7 +12,7 @@
 /*
  * Protos
  */
-static Palette4* mk_palette4(const UBYTE* cmap_data, const ULONG size);
+static VOID mk_palette4(const UBYTE*, Palette4*, const ULONG);
 static void decompress(
 	UBYTE* source,
 	PLANEPTR destination[],
@@ -94,8 +94,7 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 			pic->height = bmhd->bmh_Height;
 			pic->depth = bmhd->bmh_Depth;
 
-			//printf("BMHD %ld\n", sp->sp_Size);
-			//print_bmhd(bmhd);
+			// print_bmhd(bmhd);
 		} else {
 			puts("No BMHD");
 		}
@@ -103,10 +102,9 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 		if(sp = FindProp(iff_handle, ID_ILBM, ID_CMAP)) {
 			cmap = (UBYTE *) sp->sp_Data;
 
-			pic->palette4 = mk_palette4(cmap, sp->sp_Size);
+			mk_palette4(cmap, &pic->palette4, sp->sp_Size);
 
-			//printf("CMAP size %ld\n", sp->sp_Size);
-			//print_palette4(pic->palette4);
+			// print_palette4(&pic->palette4);
 		} else {
 			puts("No CMAP");
 		}
@@ -122,6 +120,8 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 				sizeof(struct NameInfo),
 				DTAG_NAME,
 				camg);
+
+			// printf("nameinfo: %s", ninfo.Name);
 		} else {
 			puts("No CAMG");
 		}
@@ -149,12 +149,15 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 			error = 1; // just not 0.. need to look into this
 
 		if(body_compressed) {
-			decompress(body, pic->bitmap->Planes, body_length, RASSIZE(pic->width, pic->height));
+			decompress(body,
+				pic->bitmap->Planes,
+				body_length,
+				RASSIZE(pic->width, pic->height));
 		} else {
-			//print_bitmap_data(pic->bitmap);
-
 			memcpy(pic->bitmap->Planes[0], body, body_length);
 		}
+
+		// print_bitmap_data(pic->bitmap);
 	}
 
 	free_io(iff_handle);
@@ -165,12 +168,16 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 /*
  * Private
  */
-static Palette4* mk_palette4(const UBYTE* cmap_data, const ULONG size)
+static VOID mk_palette4(
+  const UBYTE* cmap_data,
+  Palette4* palette,
+  const ULONG size
+)
 {
-	unsigned int palette_length = size / 3;
-	Palette4* palette = AllocVec(sizeof(struct Palette4) * palette_length, MEMF_CHIP);
+	ULONG palette_length = size / 3;
 	int i;
 
+	palette->data = AllocMem((sizeof(UWORD) * palette_length), MEMF_CHIP);
 	palette->length = palette_length;
 
 	for (i = 0; i < palette_length; i++) {
@@ -179,8 +186,6 @@ static Palette4* mk_palette4(const UBYTE* cmap_data, const ULONG size)
     UBYTE blue = cmap_data[i * 3 + 2] >> 4;
     palette->data[i] = (red << 8) | (green << 4) | blue;
   }
-
-	return palette;
 }
 
 static void decompress(
@@ -237,6 +242,7 @@ static void print_bmhd(const struct BitMapHeader* bmhd)
 		bmhd->bmh_PageWidth,
 		bmhd->bmh_PageHeight
 	);
+  puts("");
 }
 
 static void print_palette4(const Palette4* palette)
@@ -244,8 +250,9 @@ static void print_palette4(const Palette4* palette)
 	int i;
 
 	for(i = 0; i < palette->length; i++) {
-		printf("0x%03x, ", palette->data[i]);
+		printf("0x%03x\n", palette->data[i]);
 	}
+  puts("");
 }
 
 static void print_bitmap_data(struct BitMap* bm)

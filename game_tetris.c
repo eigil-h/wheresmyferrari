@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /*
  * Private objects
  */
@@ -28,8 +27,9 @@ static UWORD brick_bitmap[BRICK_LEN] = {
 	0x8001, 0x0000,
 	0xffff, 0x0000
 };
-
 static GameState game_state = GS_BEFORE;
+static TetraminoRenderer Tetramino[7][4];
+static Position current_position;
 
 /*
  * Private protos
@@ -37,7 +37,10 @@ static GameState game_state = GS_BEFORE;
 static void exit_handler(void);
 static void init_sprites(void);
 static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y);
-// static void render_tetramino();
+static void render_T0(UBYTE x, UBYTE y);
+static void render_T1(UBYTE x, UBYTE y);
+static void render_T2(UBYTE x, UBYTE y);
+static void render_T3(UBYTE x, UBYTE y);
 
 /*
  * Public functions
@@ -49,6 +52,11 @@ void init_game(ViewPort* vp)
 	viewport = vp;
 
 	init_sprites();
+
+	Tetramino[0][0] = render_T0;
+	Tetramino[0][1] = render_T1;
+	Tetramino[0][2] = render_T2;
+	Tetramino[0][3] = render_T3;
 }
 
 void render_frame(InputState* input_state)
@@ -56,15 +64,14 @@ void render_frame(InputState* input_state)
 	switch(game_state)
 	{
 		case GS_BEFORE:
-			render_sprite(0, 1, 0, 1);
-			render_sprite(1, 2, 1, 1);
-			render_sprite(2, 1, 2, 1);
-
+			Tetramino[0][0](current_position.x_pos, current_position.y_pos);
 			game_state = GS_PLAY;
-
 			break;
 
 		case GS_PLAY:
+			current_position.x_pos += input_state->h_val;
+			current_position.y_pos += input_state->v_val;
+			Tetramino[0][0](current_position.x_pos, current_position.y_pos);
 			break;
 
 		case GS_PAUSE:
@@ -104,6 +111,32 @@ static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y)
 		(x * BRICK_WIDTH) << 1, 
 		(y * BRICK_HEIGHT) << 1
 	);
+}
+
+static void render_T0(UBYTE x, UBYTE y)
+{
+	render_sprite(0, 1, x, y);
+	render_sprite(1, 2, x+1, y);
+	render_sprite(2, 1, x+2, y);
+}
+
+static void render_T1(UBYTE x, UBYTE y)
+{
+	render_sprite(0, 3, x, y);
+	render_sprite(1, 1, x+1, y+1);
+}
+
+static void render_T2(UBYTE x, UBYTE y)
+{
+	render_sprite(0, 1, x, y+1);
+	render_sprite(1, 2, x+1, y);
+	render_sprite(2, 1, x+2, y+1);
+}
+
+static void render_T3(UBYTE x, UBYTE y)
+{
+	render_sprite(0, 1, x, y+1);
+	render_sprite(1, 3, x+1, y);
 }
 
 static void exit_handler(void)

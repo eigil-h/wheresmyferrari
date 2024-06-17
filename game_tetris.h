@@ -22,7 +22,6 @@ typedef enum
 } GameState;
 
 typedef void (*TetraminoRenderer)(UBYTE x, UBYTE y);
-typedef TetraminoRenderer Tetramino[4][7];
 
 typedef BYTE Brick; // <0 is empty cell
 
@@ -32,6 +31,12 @@ typedef struct
 	UWORD data[4 * BRICK_LEN];
 	UWORD reserved[2];
 } BrickImage;
+
+typedef struct
+{
+	UBYTE x_pos;
+	UBYTE y_pos;
+} Position;
 
 typedef struct
 {

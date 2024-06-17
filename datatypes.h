@@ -30,7 +30,7 @@ typedef struct Picture
 	UWORD height;
 	UBYTE depth;
 	UBYTE pad[3];
-	Palette4* palette4;
+	Palette4 palette4;
 	struct BitMap* bitmap;
 } Picture;
 

@@ -26,6 +26,7 @@ static void exit_handler(void);
  */
 static Error error;
 static Picture bg_picture;
+static Picture brick_sprite;
 
 /*
  * Public
@@ -33,7 +34,7 @@ static Picture bg_picture;
 int main(void)
 {
 	ViewRequest vreq = {
-		320, 512, 5, NULL
+		320, 512, 4, NULL
 	};
 	BOOL ok;
 	struct MsgPort* input_port;
@@ -53,13 +54,15 @@ int main(void)
 	}
 
 	ok = load_picture("TetBG", &bg_picture, &error);
-
 	verify_bg_picture(ok);
-	
-	vreq.palette4 = bg_picture.palette4;
+
+  ok = load_picture("brick", &brick_sprite, &error);
+
+	vreq.palette4 = &bg_picture.palette4;
 	vreq.bitmap = bg_picture.bitmap;
 
 	viewport = make_view(&vreq);
+
 	init_game(viewport);
 
 	main_turbo(input_port);
@@ -157,7 +160,13 @@ static void verify_bg_picture(BOOL loaded)
 
 static void exit_handler(void)
 {
-	FreeVec(bg_picture.palette4);
+	FreeMem(brick_sprite.palette4.data,
+    sizeof(UWORD) * brick_sprite.palette4.length);
+
+	free_bitmap(brick_sprite.bitmap, 0, 0);
+
+	FreeMem(bg_picture.palette4.data,
+    sizeof(UWORD) * bg_picture.palette4.length);
 
 	free_bitmap(bg_picture.bitmap, 0, 0);
 }
