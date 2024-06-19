@@ -1,87 +1,116 @@
 #include <proto/exec.h>
+#include <proto/graphics.h>
+#include <string.h>
 #include "utils.h"
 
-struct BitMap* alloc_bitmap(
-	UWORD width,
-	UWORD height,
-	UBYTE depth,
-	Error* error)
+PictureData* alloc_picture_data(UWORD width, UWORD height, UBYTE depth)
 {
-	struct BitMap* bm = AllocBitMap(
-		width,
-		height,
-		depth,
-		BMF_DISPLAYABLE | BMF_INTERLEAVED,
-		NULL);
+	PictureData* pd = AllocMem(sizeof(PictureData), NULL);
 
-	if(!bm) {
-		error->code = -113;
-		error->msg = "@Alloc bitplanes";
+	pd->width = width;
+	pd->height = height;
+	pd->depth = depth;
+	pd->interleaved = TRUE;
+	pd->data = AllocMem(depth * height * BYTES_PER_ROW(width), NULL);
+	pd->palette.data = AllocMem(sizeof(ULONG) * (1L << depth), NULL);
+	pd->palette.length = 1L << depth;
+
+	return pd;
+}
+
+VOID free_picture_data(PictureData* pd)
+{
+	if(pd) {
+		FreeMem(pd->palette.data, sizeof(ULONG) * (1L << pd->depth));
+		FreeMem(pd->data, pd->depth * pd->height * BYTES_PER_ROW(pd->width));
+		FreeMem(pd, sizeof(PictureData));
 	}
+}
 
-	return bm;
+BitMap* alloc_init_bitmap(PictureData* pd, Error* error)
+{
+	BitMap* bm;
 
-/*
-	struct BitMap* bm = AllocVec(sizeof(struct BitMap), NULL);
-	int i;
+	if(os_version() >= 39) {
+		bm = AllocBitMap(
+			pd->width,
+			pd->height,
+			pd->depth,
+			BMF_DISPLAYABLE | BMF_INTERLEAVED,
+			NULL);
 
-	if(!bm) {
-		error->code = -113;
-		error->msg = "@Alloc bitmap";
-		return NULL;
-	}
-
-	InitBitMap(bm, depth, width, height);
-
-	for(i = 0; i < depth; i++) {
-		bm->Planes[i] = AllocRaster(width, height);
-
-		if(!bm->Planes[i]) {
+		if(!bm) {
 			error->code = -113;
 			error->msg = "@Alloc bitplanes";
+		} else {
+			memcpy(bm->Planes[0],
+				pd->data,
+				pd->depth * pd->height * BYTES_PER_ROW(pd->width));
+		}
+	} else {
+		bm = AllocMem(sizeof(BitMap), NULL);
 
-			free_bitmap(bm, width, height);
+		if(bm) {
+			int i;
 
-			return NULL;
+			InitBitMap(bm, pd->depth, pd->width, pd->height);
+
+			for(i = 0; i < pd->depth; i++) {
+				bm->Planes[i] = AllocRaster(pd->width, pd->height);
+
+				if(!bm->Planes[i]) {
+					error->code = -113;
+					error->msg = "@Alloc bitplanes";
+
+					free_bitmap(bm, pd->width, pd->height);
+
+					return NULL;
+				}
+			}
+		} else {
+			error->code = -113;
+			error->msg = "@Alloc bitmap";
 		}
 	}
-
 
 	return bm;
-*/
 }
 
-void free_bitmap(struct BitMap* bm, UWORD width, UWORD height)
+void free_bitmap(BitMap* bm, UWORD width, UWORD height)
 {
-	FreeBitMap(bm);
+	if(os_version() >= 39) {
+		FreeBitMap(bm);
+	} else {
+		int i;
 
-/*
+		for(i = bm->Depth - 1; i >= 0 ; --i) {
+			if(bm->Planes[i]) {
+				FreeRaster(bm->Planes[i], width, height);
+			}
+		}
+
+		FreeMem(bm, sizeof(BitMap));
+	}
+}
+
+UWORD* palette32ToRGB4(Palette32* pal32)
+{
+	UWORD* pal4data = AllocMem(pal32->length * sizeof(UWORD), NULL);
 	int i;
 
-	for(i = 0; i < bm->Depth; i++) {
-		if(bm->Planes[i]) {
-			FreeRaster(bm->Planes[i], width, height);
-		}
+	for(i = 0; i < pal32->length; i++)
+	{
+		UBYTE red = (pal32->data[i] >> 20) & 0xF;
+    UBYTE green = (pal32->data[i] >> 12) & 0xF;
+    UBYTE blue = (pal32->data[i] >> 4) & 0xF;
+
+    pal4data[i] = (red << 8) | (green << 4) | blue;
 	}
 
-	FreeVec(bm);
-*/
+	return pal4data;
 }
 
-BOOL init_library_version(CONST_STRPTR name, LibraryVersion* ver)
+int os_version(void)
 {
-	struct Library* lib_base;
-	BOOL success = FALSE;
-
-	if(lib_base = OpenLibrary(name, 0)) {
-		ver->major = lib_base->lib_Version;
-		ver->minor = lib_base->lib_Revision;
-		ver->display_value = (STRPTR) lib_base->lib_IdString;
-
-		CloseLibrary(lib_base);
-
-		success = TRUE;
-	}
-
-	return success;
+	return SysBase->LibNode.lib_Version;
 }

@@ -12,6 +12,7 @@
 
 void init_game(ViewPort*);
 void render_frame(InputState*);
+BOOL validate_loaded_data(PictureData* bg, PictureData* brick);
 
 typedef enum
 {

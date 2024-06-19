@@ -12,42 +12,45 @@
 /*
  * Protos
  */
-static VOID mk_palette4(const UBYTE*, Palette4*, const ULONG);
+static VOID mk_palette(
+  const UBYTE* cmap_data,
+  const ULONG size,
+  Palette32* palette
+);
 static void decompress(
-	UBYTE* source,
-	PLANEPTR destination[],
+	const UBYTE* source,
+	UBYTE* destination,
 	const size_t compressed_size,
 	const size_t decompressed_size);
 static void free_io(struct IFFHandle*);
 static void print_bmhd(const struct BitMapHeader*);
-static void print_palette4(const Palette4*);
-static void print_bitmap_data(struct BitMap*);
+static void print_cmap(const UBYTE* cmap, const ULONG size);
 
 /*
  * Public
  */
-BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
+PictureData* load_picture(CONST_STRPTR file_name, Error* err)
 {
+	PictureData* picture_data = NULL;
 	struct IFFHandle* iff_handle = NULL;
-	struct BitMapHeader* bmhd;
-	UBYTE* cmap;
-	UBYTE* body;
-	ULONG body_length;
-	BOOL body_compressed;
-	struct StoredProperty* sp;
+	struct BitMapHeader* bmhd = NULL;
+	UBYTE* cmap = NULL;
+	ULONG cmap_size;
+	UBYTE* body = NULL;
+	ULONG body_size;
 	LONG error;
 
 	if(!(iff_handle = AllocIFF())) {
 		err->code = -101;
 		err->msg = "@AllocIFF";
-		return FALSE;
+		return NULL;
 	}
 
 	if(!(iff_handle->iff_Stream = Open(file_name, MODE_OLDFILE))) {
 		free_io(iff_handle);
 		err->code = -102;
 		err->msg = "@Open";
-		return FALSE;
+		return NULL;
 	}
 
 	InitIFFasDOS(iff_handle);
@@ -56,141 +59,111 @@ BOOL load_picture(CONST_STRPTR file_name, Picture* pic, Error* err)
 		free_io(iff_handle);
 		err->code = error;
 		err->msg = "@OpenIFF";
-		return FALSE;
+		return NULL;
 	}
 
 	if(error = PropChunk(iff_handle, ID_ILBM, ID_BMHD)) {
 		free_io(iff_handle);
 		err->code = error;
-		return FALSE;
+		return NULL;
 	}
 
 	if(error = PropChunk(iff_handle, ID_ILBM, ID_CMAP)) {
 		free_io(iff_handle);
 		err->code = error;
-		return FALSE;
-	}
-
-	if(error = PropChunk(iff_handle, ID_ILBM, ID_CAMG)) {
-		free_io(iff_handle);
-		err->code = error;
-		return FALSE;
+		return NULL;
 	}
 
 	if(error = PropChunk(iff_handle, ID_ILBM, ID_BODY)) {
 		free_io(iff_handle);
 		err->code = error;
-		return FALSE;
+		return NULL;
 	}
 
 	StopOnExit(iff_handle, ID_ILBM, ID_FORM);
 
 	if((error = ParseIFF(iff_handle, IFFPARSE_SCAN)) == IFFERR_EOC) {
+		struct StoredProperty* sp;
+
 		if(sp = FindProp(iff_handle, ID_ILBM, ID_BMHD)) {
 			bmhd = (struct BitMapHeader*) sp->sp_Data;
-			body_compressed = (BOOL) bmhd->bmh_Compression;
-
-			pic->width = bmhd->bmh_Width;
-			pic->height = bmhd->bmh_Height;
-			pic->depth = bmhd->bmh_Depth;
-
-			// print_bmhd(bmhd);
-		} else {
-			puts("No BMHD");
 		}
 
 		if(sp = FindProp(iff_handle, ID_ILBM, ID_CMAP)) {
 			cmap = (UBYTE *) sp->sp_Data;
-
-			mk_palette4(cmap, &pic->palette4, sp->sp_Size);
-
-			// print_palette4(&pic->palette4);
-		} else {
-			puts("No CMAP");
-		}
-
-		if(sp = FindProp(iff_handle, ID_ILBM, ID_CAMG)) {
-			struct NameInfo ninfo;
-			ULONG camg = (ULONG) sp->sp_Data;
-
-
-			GetDisplayInfoData(
-				NULL,
-				(UBYTE*) &ninfo,
-				sizeof(struct NameInfo),
-				DTAG_NAME,
-				camg);
-
-			// printf("nameinfo: %s", ninfo.Name);
-		} else {
-			puts("No CAMG");
+			cmap_size = sp->sp_Size;
 		}
 
 		if(sp = FindProp(iff_handle, ID_ILBM, ID_BODY)) {
 			body = (UBYTE *) sp->sp_Data;
-			body_length = sp->sp_Size;
-
-			//printf("BODY %ld\n", sp->sp_Size);
-		} else {
-			puts("No BODY");
+			body_size = sp->sp_Size;
 		}
-
-		error = 0;
 	} else {
-		if(error == 0)
-			error = -103;
 		err->code = error;
 		err->msg = "@ParseIFF";
 	}
 
-	if(error == 0 && bmhd && body) {
-		pic->bitmap = alloc_bitmap(pic->width, pic->height, pic->depth, err);
-		if (!pic->bitmap)
-			error = 1; // just not 0.. need to look into this
-
-		if(body_compressed) {
-			decompress(body,
-				pic->bitmap->Planes,
-				body_length,
-				RASSIZE(pic->width, pic->height));
+	if(bmhd && cmap && body) {
+		if(bmhd->bmh_Masking == mskHasMask ||
+			bmhd->bmh_Masking == mskHasAlpha) {
+			err->code = bmhd->bmh_Masking;
+			err->msg = "This mask is not supported";
 		} else {
-			memcpy(pic->bitmap->Planes[0], body, body_length);
+			BOOL body_compressed = (BOOL) bmhd->bmh_Compression;
+
+			picture_data = alloc_picture_data(
+				bmhd->bmh_Width,
+				bmhd->bmh_Height,
+				bmhd->bmh_Depth
+			);
+
+			mk_palette(cmap, cmap_size, &picture_data->palette);
+
+			if(body_compressed) {
+				decompress(
+					body,
+					picture_data->data,
+					body_size,
+					picture_data->depth *
+						RASSIZE(picture_data->width, picture_data->height)
+				);
+			} else {
+				memcpy(picture_data->data, body, body_size);
+			}
 		}
 
-		// print_bitmap_data(pic->bitmap);
+		// print_bmhd(bmhd);
+		// print_cmap(cmap, cmap_size);
 	}
 
 	free_io(iff_handle);
 
-	return (BOOL) (error == 0);
+	return picture_data;
 }
 
 /*
  * Private
  */
-static VOID mk_palette4(
+static VOID mk_palette(
   const UBYTE* cmap_data,
-  Palette4* palette,
-  const ULONG size
+  const ULONG size,
+  Palette32* palette
 )
 {
 	ULONG palette_length = size / 3;
 	int i;
 
-	palette->data = AllocMem((sizeof(UWORD) * palette_length), MEMF_CHIP);
-	palette->length = palette_length;
-
 	for (i = 0; i < palette_length; i++) {
-		UBYTE red = cmap_data[i * 3] >> 4;
-    UBYTE green = cmap_data[i * 3 + 1] >> 4;
-    UBYTE blue = cmap_data[i * 3 + 2] >> 4;
-    palette->data[i] = (red << 8) | (green << 4) | blue;
+		UBYTE red = cmap_data[i * 3];
+    UBYTE green = cmap_data[i * 3 + 1];
+    UBYTE blue = cmap_data[i * 3 + 2];
+    palette->data[i] = (red << 16) | (green << 8) | blue;
   }
 }
 
 static void decompress(
-	UBYTE* source,
-	PLANEPTR destination[],
+	const UBYTE* source,
+	UBYTE* destination,
 	const size_t compressed_size,
 	const size_t decompressed_size)
 {
@@ -207,7 +180,6 @@ static void decompress(
       }
     } else if (byte != -128) {
     	int run_length = -byte;
-      // UBYTE value = source[src_idx++];
 			int i;
       for (i = 0; i < run_length && dest_idx < decompressed_size; i++) {
       }
@@ -245,25 +217,12 @@ static void print_bmhd(const struct BitMapHeader* bmhd)
   puts("");
 }
 
-static void print_palette4(const Palette4* palette)
+static void print_cmap(const UBYTE* data, const ULONG size)
 {
 	int i;
 
-	for(i = 0; i < palette->length; i++) {
-		printf("0x%03x\n", palette->data[i]);
+	for(i = 0; i < size/3; i++) {
+		printf("#%02x%02x%02x\n", *data++, *data++, *data++);
 	}
   puts("");
-}
-
-static void print_bitmap_data(struct BitMap* bm)
-{
-	printf("bpr: %d\nrows: %d\nflags: 0x%08X\ndepth: %d\np0: 0x%08X\np1: 0x%08X\np2: 0x%08X\np3: 0x%08X\n",
-		bm->BytesPerRow,
-		bm->Rows,
-		GetBitMapAttr(bm, BMA_FLAGS),
-		bm->Depth,
-		bm->Planes[0],
-		bm->Planes[1],
-		bm->Planes[2],
-		bm->Planes[3]);
 }

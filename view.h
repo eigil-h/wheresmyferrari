@@ -4,7 +4,7 @@
 #include "datatypes.h"
 
 //Checking chipset OCS, ECS, AGA
-//(GfxBase->ChipRevBits0 & GFXF_HR AGNUS)
+//(GfxBase->ChipRevBits0 & GFXF_HR_AGNUS)
 //(GfxBase->ChipRevBits0 & GFXF_HR_DENISE)
 
 typedef struct ViewRequest
@@ -13,8 +13,8 @@ typedef struct ViewRequest
   UWORD height;
   UBYTE depth;
   UBYTE pad[3];
-  Palette4* palette4;
-  struct BitMap* bitmap;
+  Palette4 palette4;
+  BitMap* bg_bitmap;
 } ViewRequest;
 
 ViewPort* make_view(ViewRequest*);

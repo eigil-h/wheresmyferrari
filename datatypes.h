@@ -10,42 +10,37 @@ typedef struct MsgPort MsgPort;
 typedef struct Message Message;
 typedef struct Interrupt Interrupt;
 typedef struct ViewPort ViewPort;
+typedef struct BitMap BitMap;
 
-
-typedef struct Palette4
+typedef struct
 {
 	UWORD* data;
 	WORD length;
 } Palette4;
 
-struct Palette32
+typedef struct
 {
 	ULONG* data;
 	ULONG length;
-};
+} Palette32;
 
-typedef struct Picture
+typedef struct
 {
 	UWORD width;
 	UWORD height;
 	UBYTE depth;
-	UBYTE pad[3];
-	Palette4 palette4;
-	struct BitMap* bitmap;
-} Picture;
+	UBYTE pad;
+	BOOL interleaved;
+	UBYTE* data;
+	Palette32 palette;
+} PictureData;
 
-typedef struct Error
+
+typedef struct
 {
 	ULONG code;
 	STRPTR msg;
 } Error;
-
-typedef struct LibraryVersion
-{
-	UWORD major;
-	UWORD minor;
-	STRPTR display_value;
-} LibraryVersion;
 
 typedef struct
 {

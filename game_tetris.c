@@ -82,6 +82,16 @@ void render_frame(InputState* input_state)
 	}
 }
 
+BOOL validate_loaded_data(PictureData* bg, PictureData* brick)
+{
+	return (BOOL) (bg->width == 320 &&
+		bg->height == 512 &&
+		bg->depth == 4 &&
+		brick->width == 16 &&
+		brick->height == 16 &&
+		brick->depth >= 2);
+}
+
 /*
  * Private functions
  */

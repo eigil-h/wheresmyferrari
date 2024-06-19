@@ -14,7 +14,6 @@ static struct View* oldview = NULL;
 static struct ViewExtra* vextra = NULL;
 static struct ViewPortExtra* vpextra = NULL;
 static struct MonitorSpec* monspec = NULL;
-//static struct BitMap* bitmap = NULL;
 static struct ColorMap* colormap = NULL;
 static struct View view;
 static struct ViewPort viewport;
@@ -54,7 +53,7 @@ ViewPort* make_view(ViewRequest* view_request)
 		exit(VIEW_ERROR_OPEN_MONITOR);
 	}
 
-	rasinfo.BitMap = view_request->bitmap;
+	rasinfo.BitMap = view_request->bg_bitmap;
 
 	InitVPort(&viewport);
 	view.ViewPort = &viewport;
@@ -100,8 +99,8 @@ ViewPort* make_view(ViewRequest* view_request)
 	}
 
 	LoadRGB4(&viewport,
-		view_request->palette4->data,
-		view_request->palette4->length
+		view_request->palette4.data,
+		view_request->palette4.length
 	);
 
 	if(MakeVPort(&view, &viewport) != MVP_OK) {
@@ -162,9 +161,6 @@ static VOID exit_handler(VOID)
 	if(vpextra)
 		GfxFree(vpextra);
 
-/*	if(bitmap)
-		FreeBitMap(bitmap);
-*/
 	if(monspec)
 		CloseMonitor(monspec);
 

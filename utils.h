@@ -1,14 +1,18 @@
 #ifndef APP_UTILS_H
 #define APP_UTILS_H
 
-#include <proto/graphics.h>
 #include "datatypes.h"
 
-/* V36 AllocBitMap
- */
-struct BitMap* alloc_bitmap(UWORD, UWORD, UBYTE, Error*);
-void free_bitmap(struct BitMap*, UWORD, UWORD);
+#define BYTES_PER_ROW(w) ((((ULONG)(w) + 15) >> 3) & 0xFFFE)
 
-BOOL init_library_version(CONST_STRPTR name, LibraryVersion*);
+PictureData* alloc_picture_data(UWORD width, UWORD height, UBYTE depth);
+VOID free_picture_data(PictureData*);
+
+BitMap* alloc_init_bitmap(PictureData*, Error*);
+void free_bitmap(BitMap*, UWORD, UWORD);
+
+UWORD* palette32ToRGB4(Palette32*);
+
+int os_version(void);
 
 #endif

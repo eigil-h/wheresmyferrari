@@ -3,6 +3,8 @@
 
 #include "datatypes.h"
 
-BOOL load_picture(CONST_STRPTR, Picture*, Error*);
+#define IO_ERR 2000
+
+PictureData* load_picture(CONST_STRPTR, Error*);
 
 #endif

@@ -17,51 +17,39 @@
 /*
  * Protos
  */
+static void prepare_view_request(
+	PictureData* bg,
+	PictureData* brick);
 static void main_turbo(struct MsgPort*);
-static void verify_bg_picture(BOOL loaded);
 static void exit_handler(void);
 
 /*
  * Private objects
  */
+static ViewRequest view_request;
 static Error error;
-static Picture bg_picture;
-static Picture brick_sprite;
 
 /*
  * Public
  */
 int main(void)
 {
-	ViewRequest vreq = {
-		320, 512, 4, NULL
-	};
-	BOOL ok;
 	struct MsgPort* input_port;
 	ViewPort* viewport;
 
-
 	atexit(exit_handler);
 
-	if(!(SysBase->LibNode.lib_Version >= 39)) {
-		puts("Cant verify AmigaOS 3.0+");
-		exit(EXIT_FAILURE);
-	}
-	
 	if(!(input_port = setup_input_handler()))
 	{
 		exit(EXIT_FAILURE);
 	}
 
-	ok = load_picture("TetBG", &bg_picture, &error);
-	verify_bg_picture(ok);
+	prepare_view_request(
+		load_picture("TetBG", &error),
+		load_picture("brick", &error)
+	);
 
-  ok = load_picture("brick", &brick_sprite, &error);
-
-	vreq.palette4 = &bg_picture.palette4;
-	vreq.bitmap = bg_picture.bitmap;
-
-	viewport = make_view(&vreq);
+	viewport = make_view(&view_request);
 
 	init_game(viewport);
 
@@ -73,6 +61,32 @@ int main(void)
 /*
  * Private
  */
+static void prepare_view_request(
+	PictureData* bg,
+	PictureData* brick)
+{
+	if(bg && brick)
+	{
+		if(validate_loaded_data(bg, brick))
+		{
+			view_request.width = bg->width;
+			view_request.height = bg->height;
+			view_request.depth = bg->depth;
+			view_request.palette4.data = palette32ToRGB4(&bg->palette);
+			view_request.palette4.length = bg->palette.length;
+			view_request.bg_bitmap = alloc_init_bitmap(bg, &error);
+		}
+		else
+		{
+			error.code = 13;
+			error.msg = "Bad files";
+		}
+	}
+
+	free_picture_data(brick);
+	free_picture_data(bg);
+}
+
 static void main_turbo(struct MsgPort* input_port)
 {
 	BOOL not_done = TRUE;
@@ -137,36 +151,19 @@ static void main_turbo(struct MsgPort* input_port)
 	}
 }
 
-static void verify_bg_picture(BOOL loaded)
-{
-	UWORD required_width = 320;
-	UWORD required_height = 512;
-
-	if(loaded &&
-		bg_picture.width == required_width &&
-		bg_picture.height == required_height) {
-		return;
-	}
-
-	if(!loaded)
-		printf("\nERROR: %d - \"%s\"\n", error.code, error.msg);
-	else
-		printf("Incorrect BG picture dimensions, %d x %d. Should be 320x512",
-			bg_picture.width,
-			bg_picture.height);
-
-	exit(EXIT_BAD_BG_PICTURE);
-}
-
 static void exit_handler(void)
 {
-	FreeMem(brick_sprite.palette4.data,
-    sizeof(UWORD) * brick_sprite.palette4.length);
+	if(view_request.palette4.data) {
+		FreeMem(view_request.palette4.data, view_request.palette4.length);
+	}
+	if(view_request.bg_bitmap) {
+		free_bitmap(
+			view_request.bg_bitmap,
+			view_request.width,
+			view_request.height
+		);
+	}
 
-	free_bitmap(brick_sprite.bitmap, 0, 0);
-
-	FreeMem(bg_picture.palette4.data,
-    sizeof(UWORD) * bg_picture.palette4.length);
-
-	free_bitmap(bg_picture.bitmap, 0, 0);
+	if(error.code)
+		printf("%d, %s\n", error.code, error.msg);
 }
