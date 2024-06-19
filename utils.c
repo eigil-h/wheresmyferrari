@@ -1,5 +1,6 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
+#include <stdio.h>
 #include <string.h>
 #include "utils.h"
 
@@ -93,7 +94,7 @@ void free_bitmap(BitMap* bm, UWORD width, UWORD height)
 	}
 }
 
-UWORD* palette32ToRGB4(Palette32* pal32)
+UWORD* palette32To4Data(Palette32* pal32)
 {
 	UWORD* pal4data = AllocMem(pal32->length * sizeof(UWORD), NULL);
 	int i;
@@ -108,6 +109,54 @@ UWORD* palette32ToRGB4(Palette32* pal32)
 	}
 
 	return pal4data;
+}
+
+ULONG* palette32ConcatData(Palette32* src1, Palette32* src2)
+{
+	ULONG* dest_data = AllocMem(sizeof(ULONG) * (src1->length + src2->length), NULL);
+
+	memcpy(dest_data, src1->data, sizeof(ULONG) * src1->length);
+	memcpy(&dest_data[src1->length], src2->data, sizeof(ULONG) * src2->length);
+
+	return dest_data;
+}
+
+VOID free_view_request(ViewRequest* view_request)
+{
+	if(view_request)
+	{
+		if(view_request->palette4.data) {
+			FreeMem(view_request->palette4.data, view_request->palette4.length);
+		}
+
+		if(view_request->bg_bitmap) {
+			free_bitmap(
+				view_request->bg_bitmap,
+				view_request->width,
+				view_request->height
+			);
+		}
+
+		FreeMem(view_request, sizeof(ViewRequest));
+	}
+}
+
+VOID print_palette32(Palette32* pal)
+{
+	int i;
+	for(i = 0; i < pal->length; i++)
+	{
+		printf("%2d: #%08x\n", i, pal->data[i]);
+	}
+}
+
+VOID print_palette4(Palette4* pal)
+{
+	int i;
+	for(i = 0; i < pal->length; i++)
+	{
+		printf("%2d: #%04x\n", i, pal->data[i]);
+	}
 }
 
 int os_version(void)

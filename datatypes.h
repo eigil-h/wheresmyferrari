@@ -35,6 +35,15 @@ typedef struct
 	Palette32 palette;
 } PictureData;
 
+typedef struct
+{
+  UWORD width;
+  UWORD height;
+  UBYTE depth;
+  UBYTE pad[3];
+  Palette4 palette4;
+  BitMap* bg_bitmap;
+} ViewRequest;
 
 typedef struct
 {

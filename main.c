@@ -17,16 +17,12 @@
 /*
  * Protos
  */
-static void prepare_view_request(
-	PictureData* bg,
-	PictureData* brick);
 static void main_turbo(struct MsgPort*);
 static void exit_handler(void);
 
 /*
  * Private objects
  */
-static ViewRequest view_request;
 static Error error;
 
 /*
@@ -36,6 +32,7 @@ int main(void)
 {
 	struct MsgPort* input_port;
 	ViewPort* viewport;
+	ViewRequest* view_request;
 
 	atexit(exit_handler);
 
@@ -44,12 +41,23 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
-	prepare_view_request(
+	if(!(view_request = prepare_gfx(
 		load_picture("TetBG", &error),
-		load_picture("brick", &error)
-	);
+		load_picture("brick", &error),
+		&error
+	)))
+	{
+		exit(EXIT_FAILURE);
+	}
 
-	viewport = make_view(&view_request);
+	viewport = make_view(view_request);
+
+	free_view_request(view_request);
+
+	if(!viewport)
+	{
+		exit(EXIT_FAILURE);
+	}
 
 	init_game(viewport);
 
@@ -61,32 +69,6 @@ int main(void)
 /*
  * Private
  */
-static void prepare_view_request(
-	PictureData* bg,
-	PictureData* brick)
-{
-	if(bg && brick)
-	{
-		if(validate_loaded_data(bg, brick))
-		{
-			view_request.width = bg->width;
-			view_request.height = bg->height;
-			view_request.depth = bg->depth;
-			view_request.palette4.data = palette32ToRGB4(&bg->palette);
-			view_request.palette4.length = bg->palette.length;
-			view_request.bg_bitmap = alloc_init_bitmap(bg, &error);
-		}
-		else
-		{
-			error.code = 13;
-			error.msg = "Bad files";
-		}
-	}
-
-	free_picture_data(brick);
-	free_picture_data(bg);
-}
-
 static void main_turbo(struct MsgPort* input_port)
 {
 	BOOL not_done = TRUE;
@@ -153,17 +135,6 @@ static void main_turbo(struct MsgPort* input_port)
 
 static void exit_handler(void)
 {
-	if(view_request.palette4.data) {
-		FreeMem(view_request.palette4.data, view_request.palette4.length);
-	}
-	if(view_request.bg_bitmap) {
-		free_bitmap(
-			view_request.bg_bitmap,
-			view_request.width,
-			view_request.height
-		);
-	}
-
 	if(error.code)
 		printf("%d, %s\n", error.code, error.msg);
 }

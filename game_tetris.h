@@ -10,9 +10,10 @@
 
 #include "datatypes.h"
 
-void init_game(ViewPort*);
-void render_frame(InputState*);
-BOOL validate_loaded_data(PictureData* bg, PictureData* brick);
+VOID init_game(ViewPort*);
+VOID render_frame(InputState*);
+ViewRequest* prepare_gfx(PictureData* bg, PictureData* brick, Error*);
+
 
 typedef enum
 {

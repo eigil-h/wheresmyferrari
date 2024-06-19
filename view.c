@@ -73,7 +73,8 @@ ViewPort* make_view(ViewRequest* view_request)
 		sizeof(dimquery),
 		DTAG_DIMS,
 		mode_id
-	)) {
+	))
+	{
 		exit(VIEW_ERROR_DIMQUERY);
 	}
 
@@ -85,7 +86,7 @@ ViewPort* make_view(ViewRequest* view_request)
 
 	// viewport.Modes = (UWORD) (mode_id & 0x0000ffff); - 1.3 stuff??
 
-	if(!(colormap = GetColorMap(1L << view_request->depth))) {
+	if(!(colormap = GetColorMap(view_request->palette4.length))) {
 		exit(VIEW_ERROR_COLORMAP);
 	}
 

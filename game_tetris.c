@@ -1,7 +1,9 @@
-#include "game_tetris.h"
 #include <proto/graphics.h>
+#include <proto/exec.h>
 #include <stdlib.h>
 #include <string.h>
+#include "game_tetris.h"
+#include "utils.h"
 
 /*
  * Private objects
@@ -9,24 +11,7 @@
 static ViewPort* viewport;
 static struct SimpleSprite tetromino_sprite[NUM_SPRITES];
 static BrickImage __chip brick_image[NUM_SPRITES];
-static UWORD brick_bitmap[BRICK_LEN] = {
-	0xffff, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0x8001, 0x0000,
-	0xffff, 0x0000
-};
+static UWORD brick_bitmap[BRICK_LEN];
 static GameState game_state = GS_BEFORE;
 static TetraminoRenderer Tetramino[7][4];
 static Position current_position;
@@ -34,6 +19,7 @@ static Position current_position;
 /*
  * Private protos
  */
+static BOOL validate_loaded_data(PictureData* bg, PictureData* brick);
 static void exit_handler(void);
 static void init_sprites(void);
 static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y);
@@ -82,7 +68,68 @@ void render_frame(InputState* input_state)
 	}
 }
 
-BOOL validate_loaded_data(PictureData* bg, PictureData* brick)
+ViewRequest* prepare_gfx(PictureData* bg, PictureData* brick, Error* err)
+{
+	ViewRequest* view_request = NULL;
+
+	if(validate_loaded_data(bg, brick))
+	{
+		int h;
+		UWORD* bbm;
+		UBYTE* bd;
+		ULONG tmp_brick_palette_data[16];
+		Palette32 tmp_brick_palette;
+		Palette32 tmp_palette;
+
+		memcpy(tmp_brick_palette_data, brick->palette.data, 4 * sizeof(ULONG));
+		memcpy(&tmp_brick_palette_data[4], brick->palette.data, 4 * sizeof(ULONG));
+		memcpy(&tmp_brick_palette_data[8], brick->palette.data, 4 * sizeof(ULONG));
+		memcpy(&tmp_brick_palette_data[12], brick->palette.data, 4 * sizeof(ULONG));
+
+		tmp_brick_palette.data = tmp_brick_palette_data;
+		tmp_brick_palette.length = 16;
+
+		tmp_palette.data = palette32ConcatData(&bg->palette, &tmp_brick_palette);
+		tmp_palette.length = bg->palette.length + 16;
+
+		view_request = AllocMem(sizeof(ViewRequest), NULL);
+
+		if(view_request)
+		{
+			view_request->width = bg->width;
+			view_request->height = bg->height;
+			view_request->depth = bg->depth;
+			view_request->palette4.data = palette32To4Data(&tmp_palette);
+			view_request->palette4.length = tmp_palette.length;
+			view_request->bg_bitmap = alloc_init_bitmap(bg, err);
+		}
+
+		if(tmp_palette.data)
+			FreeMem(tmp_palette.data, sizeof(ULONG) * tmp_palette.length);
+
+		// init brick_bitmap[BRICK_LEN], todo -> alloc_init_sprite
+		bbm = brick_bitmap;
+		bd = brick->data;
+		for(h = 0; h < brick->height; h++)
+		{
+			*bbm++ = (*bd++) << 8 | *bd++;
+			*bbm++ = (*bd++) << 8 | *bd++;
+			bd += 2 * (brick->depth - 2);
+		}
+	}
+	else
+	{
+		err->code = 13;
+		err->msg = "Bad files";
+	}
+
+	return view_request;
+}
+
+/*
+ * Private functions
+ */
+static BOOL validate_loaded_data(PictureData* bg, PictureData* brick)
 {
 	return (BOOL) (bg->width == 320 &&
 		bg->height == 512 &&
@@ -92,9 +139,6 @@ BOOL validate_loaded_data(PictureData* bg, PictureData* brick)
 		brick->depth >= 2);
 }
 
-/*
- * Private functions
- */
 static void init_sprites(void)
 {
 	int i;
