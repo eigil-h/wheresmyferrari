@@ -42,6 +42,7 @@ typedef struct
   UBYTE depth;
   UBYTE pad[3];
   Palette4 palette4;
+  UWORD pad1;
   BitMap* bg_bitmap;
 } ViewRequest;
 

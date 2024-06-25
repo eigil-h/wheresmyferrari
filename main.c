@@ -24,6 +24,9 @@ static void exit_handler(void);
  * Private objects
  */
 static Error error;
+static ViewRequest* view_request;
+static PictureData* bg_data;
+static PictureData* brick_data;
 
 /*
  * Public
@@ -32,7 +35,6 @@ int main(void)
 {
 	struct MsgPort* input_port;
 	ViewPort* viewport;
-	ViewRequest* view_request;
 
 	atexit(exit_handler);
 
@@ -41,18 +43,25 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
-	if(!(view_request = prepare_gfx(
-		load_picture("TetBG", &error),
-		load_picture("brick", &error),
-		&error
-	)))
+	if(!(bg_data = load_picture("TetBG", &error)))
 	{
 		exit(EXIT_FAILURE);
 	}
 
-	viewport = make_view(view_request);
+	if(!(brick_data = load_picture("brick", &error)))
+	{
+		exit(EXIT_FAILURE);
+	}
 
-	free_view_request(view_request);
+	if(!(view_request = prepare_gfx(bg_data, brick_data, &error)))
+	{
+		exit(EXIT_FAILURE);
+	}
+
+	free_picture_data(&brick_data);
+	free_picture_data(&bg_data);
+
+	viewport = make_view(view_request);
 
 	if(!viewport)
 	{
@@ -135,6 +144,11 @@ static void main_turbo(struct MsgPort* input_port)
 
 static void exit_handler(void)
 {
+
+	free_picture_data(&brick_data);
+	free_picture_data(&bg_data);
+	free_view_request(view_request);
+
 	if(error.code)
 		printf("%d, %s\n", error.code, error.msg);
 }

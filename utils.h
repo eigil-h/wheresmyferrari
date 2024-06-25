@@ -6,7 +6,7 @@
 #define BYTES_PER_ROW(w) ((((ULONG)(w) + 15) >> 3) & 0xFFFE)
 
 PictureData* alloc_picture_data(UWORD width, UWORD height, UBYTE depth);
-VOID free_picture_data(PictureData*);
+VOID free_picture_data(PictureData**);
 
 BitMap* alloc_init_bitmap(PictureData*, Error*);
 VOID free_bitmap(BitMap*, UWORD, UWORD);

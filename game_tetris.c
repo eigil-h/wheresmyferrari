@@ -1,5 +1,6 @@
 #include <proto/graphics.h>
 #include <proto/exec.h>
+#include <proto/timer.h>
 #include <stdlib.h>
 #include <string.h>
 #include "game_tetris.h"
@@ -14,7 +15,10 @@ static BrickImage __chip brick_image[NUM_SPRITES];
 static UWORD brick_bitmap[BRICK_LEN];
 static GameState game_state = GS_BEFORE;
 static TetraminoRenderer Tetramino[7][4];
-static Position current_position;
+static Position current_position = {1,1};
+static LONG prev_timestamp = 0;
+static Level current_level = {1000, 0};
+
 
 /*
  * Private protos

@@ -11,8 +11,8 @@
  */
 static IOStdReq* input_device_io_request;
 static MsgPort* input_device_msg_port;
+static MsgPort* receiver_port;
 static Interrupt handler_info;
-
 
 /*
  * Private protos
@@ -27,8 +27,6 @@ static ULONG __regargs input_handler(
  */
 MsgPort* setup_input_handler(void)
 {
-	MsgPort* receiver_port = NULL;
-
 	atexit(exit_handler);
 
 	if(!(input_device_msg_port = CreatePort(NULL, 0)))
@@ -143,5 +141,14 @@ static void exit_handler(void)
         ReplyMsg(msg);
     }
 		DeletePort(input_device_msg_port);
+	}
+
+	if(receiver_port)
+	{
+		struct Message* msg;
+		while ((msg = GetMsg(receiver_port)) != NULL) {
+        ReplyMsg(msg);
+    }
+		DeletePort(receiver_port);
 	}
 }

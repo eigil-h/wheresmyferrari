@@ -1,0 +1,3 @@
+MungFriend install size 15000 trace flash nobells noserial
+Run Mungwall task all showfail nametag
+Run Enforcer deadly showpc rawio buffersize 5000

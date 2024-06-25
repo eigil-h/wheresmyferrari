@@ -19,12 +19,16 @@ PictureData* alloc_picture_data(UWORD width, UWORD height, UBYTE depth)
 	return pd;
 }
 
-VOID free_picture_data(PictureData* pd)
+VOID free_picture_data(PictureData** pd_ptr)
 {
+	PictureData* pd = *pd_ptr;
+
 	if(pd) {
 		FreeMem(pd->palette.data, sizeof(ULONG) * (1L << pd->depth));
 		FreeMem(pd->data, pd->depth * pd->height * BYTES_PER_ROW(pd->width));
 		FreeMem(pd, sizeof(PictureData));
+
+		*pd_ptr = NULL;
 	}
 }
 
@@ -113,7 +117,9 @@ UWORD* palette32To4Data(Palette32* pal32)
 
 ULONG* palette32ConcatData(Palette32* src1, Palette32* src2)
 {
-	ULONG* dest_data = AllocMem(sizeof(ULONG) * (src1->length + src2->length), NULL);
+	ULONG* dest_data = AllocMem(
+		sizeof(ULONG) * (src1->length + src2->length),
+		NULL);
 
 	memcpy(dest_data, src1->data, sizeof(ULONG) * src1->length);
 	memcpy(&dest_data[src1->length], src2->data, sizeof(ULONG) * src2->length);
@@ -126,7 +132,8 @@ VOID free_view_request(ViewRequest* view_request)
 	if(view_request)
 	{
 		if(view_request->palette4.data) {
-			FreeMem(view_request->palette4.data, view_request->palette4.length);
+			FreeMem(view_request->palette4.data, 
+				sizeof(UWORD) * view_request->palette4.length);
 		}
 
 		if(view_request->bg_bitmap) {
