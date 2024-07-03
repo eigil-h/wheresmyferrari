@@ -4,8 +4,6 @@
 #include "datatypes.h"
 #include <devices/inputevent.h>
 
-typedef struct IORequest IORequest;
-typedef struct IOStdReq IOStdReq;
 typedef struct InputEvent InputEvent;
 
 #define EXIT_INPUT 0xB0

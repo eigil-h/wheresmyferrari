@@ -2,6 +2,7 @@
 #include <proto/exec.h>
 #include <proto/timer.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "game_tetris.h"
 #include "utils.h"
@@ -16,7 +17,7 @@ static UWORD brick_bitmap[BRICK_LEN];
 static GameState game_state = GS_BEFORE;
 static TetraminoRenderer Tetramino[7][4];
 static Position current_position = {1,1};
-static LONG prev_timestamp = 0;
+static TimeVal_Type prev_timestamp = {0};
 static Level current_level = {1000, 0};
 
 
@@ -51,17 +52,28 @@ void init_game(ViewPort* vp)
 
 void render_frame(InputState* input_state)
 {
+	TimeVal_Type ts;
+
 	switch(game_state)
 	{
 		case GS_BEFORE:
 			Tetramino[0][0](current_position.x_pos, current_position.y_pos);
+			GetSysTime(&prev_timestamp);
 			game_state = GS_PLAY;
 			break;
 
 		case GS_PLAY:
-			current_position.x_pos += input_state->h_val;
-			current_position.y_pos += input_state->v_val;
-			Tetramino[0][0](current_position.x_pos, current_position.y_pos);
+			GetSysTime(&ts);
+			SubTime(&ts, &prev_timestamp);
+
+			if(ts.tv_secs > 0)
+			{
+				current_position.x_pos += input_state->h_val;
+				current_position.y_pos += input_state->v_val;
+				Tetramino[0][0](current_position.x_pos, current_position.y_pos);
+
+				AddTime(&prev_timestamp, &ts);
+			}
 			break;
 
 		case GS_PAUSE:
@@ -204,4 +216,8 @@ static void exit_handler(void)
 	{
 		FreeSprite(i);
 	}
+
+	printf("secs:%ld, micro:%ld\n",
+		prev_timestamp.tv_secs,
+		prev_timestamp.tv_micro);
 }

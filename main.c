@@ -3,6 +3,7 @@
 #include "view.h"
 #include "io.h"
 #include "input.h"
+#include "timer.h"
 #include "game_tetris.h"
 
 #include <libraries/keymap.h>
@@ -42,6 +43,8 @@ int main(void)
 	{
 		exit(EXIT_FAILURE);
 	}
+
+	open_timer_device();
 
 	if(!(bg_data = load_picture("TetBG", &error)))
 	{

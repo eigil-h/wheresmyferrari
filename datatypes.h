@@ -9,6 +9,8 @@
 typedef struct MsgPort MsgPort;
 typedef struct Message Message;
 typedef struct Interrupt Interrupt;
+typedef struct IORequest IORequest;
+typedef struct IOStdReq IOStdReq;
 typedef struct ViewPort ViewPort;
 typedef struct BitMap BitMap;
 
