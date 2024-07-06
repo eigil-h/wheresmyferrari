@@ -2,7 +2,6 @@
 #include <proto/exec.h>
 #include <proto/timer.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include "game_tetris.h"
 #include "utils.h"
@@ -15,23 +14,31 @@ static struct SimpleSprite tetromino_sprite[NUM_SPRITES];
 static BrickImage __chip brick_image[NUM_SPRITES];
 static UWORD brick_bitmap[BRICK_LEN];
 static GameState game_state = GS_BEFORE;
-static TetraminoRenderer Tetramino[7][4];
-static Position current_position = {1,1};
-static TimeVal_Type prev_timestamp = {0};
-static Level current_level = {1000, 0};
-
+static TetraminoRenderer tetromino[7][4];
+static Tetromino current = {{3,1}, {0}, {0}};
+static TimeVal_Type prev_tick;
+static TimeVal_Type prev_move;
+static TimeVal_Type move_tv = {0L, 200000L};
+static Game game;
+static Level level[] = {
+	{{1L, 0L}, 1000},
+	{{0L, 800000L}, 2000},
+	{{0L, 650000L}, 3000},
+	{{0L, 500000L}, 4000}
+};
 
 /*
  * Private protos
  */
 static BOOL validate_loaded_data(PictureData* bg, PictureData* brick);
-static void exit_handler(void);
-static void init_sprites(void);
-static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y);
-static void render_T0(UBYTE x, UBYTE y);
-static void render_T1(UBYTE x, UBYTE y);
-static void render_T2(UBYTE x, UBYTE y);
-static void render_T3(UBYTE x, UBYTE y);
+static VOID exit_handler(VOID);
+static VOID init_sprites(VOID);
+static VOID render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y);
+static VOID render_tetromino(VOID);
+static VOID render_T0(UBYTE x, UBYTE y);
+static VOID render_T1(UBYTE x, UBYTE y);
+static VOID render_T2(UBYTE x, UBYTE y);
+static VOID render_T3(UBYTE x, UBYTE y);
 
 /*
  * Public functions
@@ -44,10 +51,10 @@ void init_game(ViewPort* vp)
 
 	init_sprites();
 
-	Tetramino[0][0] = render_T0;
-	Tetramino[0][1] = render_T1;
-	Tetramino[0][2] = render_T2;
-	Tetramino[0][3] = render_T3;
+	tetromino[0][0] = render_T0;
+	tetromino[0][1] = render_T1;
+	tetromino[0][2] = render_T2;
+	tetromino[0][3] = render_T3;
 }
 
 void render_frame(InputState* input_state)
@@ -57,22 +64,41 @@ void render_frame(InputState* input_state)
 	switch(game_state)
 	{
 		case GS_BEFORE:
-			Tetramino[0][0](current_position.x_pos, current_position.y_pos);
-			GetSysTime(&prev_timestamp);
+			render_tetromino();
 			game_state = GS_PLAY;
 			break;
 
 		case GS_PLAY:
-			GetSysTime(&ts);
-			SubTime(&ts, &prev_timestamp);
-
-			if(ts.tv_secs > 0)
+			if(input_state->h_val != 0 ||
+				input_state->v_val != 0 ||
+				input_state->enter != 0)
 			{
-				current_position.x_pos += input_state->h_val;
-				current_position.y_pos += input_state->v_val;
-				Tetramino[0][0](current_position.x_pos, current_position.y_pos);
+				GetSysTime(&ts);
+				SubTime(&ts, &prev_move);
 
-				AddTime(&prev_timestamp, &ts);
+				if(CmpTime(&move_tv, &ts) > 0)
+				{
+					current.p.x += input_state->h_val;
+
+					if(input_state->v_val < 0)
+					{
+						current.o -= input_state->v_val;
+						current.o &= 3;
+					}
+					else
+					{
+						current.p.y += input_state->v_val;
+					}
+
+					render_tetromino();
+
+					AddTime(&prev_move, &ts);
+				}
+			}
+			else
+			{
+				prev_move.tv_secs = 0L;
+				prev_move.tv_micro = 0L;
 			}
 			break;
 
@@ -183,17 +209,23 @@ static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y)
 	);
 }
 
+static VOID render_tetromino(VOID)
+{
+	tetromino[current.t][current.o](current.p.x, current.p.y);
+}
+
 static void render_T0(UBYTE x, UBYTE y)
 {
-	render_sprite(0, 1, x, y);
-	render_sprite(1, 2, x+1, y);
-	render_sprite(2, 1, x+2, y);
+	render_sprite(0, 1, x, y+1);
+	render_sprite(1, 2, x+1, y+1);
+	render_sprite(2, 1, x+2, y+1);
 }
 
 static void render_T1(UBYTE x, UBYTE y)
 {
-	render_sprite(0, 3, x, y);
-	render_sprite(1, 1, x+1, y+1);
+	render_sprite(0, 1, x, y+1);
+	render_sprite(1, 3, x+1, y);
+	render_sprite(2, 0, x+2, y);
 }
 
 static void render_T2(UBYTE x, UBYTE y)
@@ -205,8 +237,9 @@ static void render_T2(UBYTE x, UBYTE y)
 
 static void render_T3(UBYTE x, UBYTE y)
 {
-	render_sprite(0, 1, x, y+1);
+	render_sprite(0, 0, x, y);
 	render_sprite(1, 3, x+1, y);
+	render_sprite(2, 1, x+2, y+1);
 }
 
 static void exit_handler(void)
@@ -216,8 +249,4 @@ static void exit_handler(void)
 	{
 		FreeSprite(i);
 	}
-
-	printf("secs:%ld, micro:%ld\n",
-		prev_timestamp.tv_secs,
-		prev_timestamp.tv_micro);
 }

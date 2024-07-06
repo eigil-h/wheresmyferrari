@@ -1,14 +1,15 @@
 #ifndef GAME_TETRIS
 #define GAME_TETRIS
 
+#include <devices/timer.h>
+#include "datatypes.h"
+
 #define NUM_SPRITES 4
 #define BRICK_HEIGHT 16
 #define BRICK_WIDTH 16
 #define SPRITE_DEPTH 2
 #define BRICK_LEN (SPRITE_DEPTH * BRICK_HEIGHT)
 #define BRICK_SIZ (sizeof(UWORD) * BRICK_LEN)
-
-#include "datatypes.h"
 
 VOID init_game(ViewPort*);
 VOID render_frame(InputState*);
@@ -36,9 +37,16 @@ typedef struct
 
 typedef struct
 {
-	UBYTE x_pos;
-	UBYTE y_pos;
+	UBYTE x;
+	UBYTE y;
 } Position;
+
+typedef struct
+{
+	Position p;
+	UBYTE t; // index to tetromino
+	UBYTE o; // index to orientation
+} Tetromino;
 
 typedef struct
 {
@@ -47,14 +55,16 @@ typedef struct
 
 typedef struct
 {
-  UWORD speed;
-  UWORD bonus;
+  TimeVal_Type speed;
+  ULONG score;
 } Level;
 
 typedef struct
 {
-  UWORD hiscore;
-  UWORD score;
-} Gamestat;
+  ULONG hiscore;
+  ULONG score;
+  UWORD level;
+  UWORD pad;
+} Game;
 
 #endif
