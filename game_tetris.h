@@ -10,6 +10,8 @@
 #define SPRITE_DEPTH 2
 #define BRICK_LEN (SPRITE_DEPTH * BRICK_HEIGHT)
 #define BRICK_SIZ (sizeof(UWORD) * BRICK_LEN)
+#define PLG_WIDTH 10
+#define PLG_HEIGHT 13
 
 VOID init_game(ViewPort*);
 VOID render_frame(InputState*);
@@ -37,20 +39,37 @@ typedef struct
 
 typedef struct
 {
-	UBYTE x;
+	BYTE x;
 	UBYTE y;
 } Position;
 
 typedef struct
 {
+	UBYTE start;
+	UBYTE height;
+} TetrominoColumn;
+
+typedef struct
+{
+	TetrominoColumn c[4];
+	UWORD first, last;
+} TetrominoOrientation;
+
+typedef struct
+{
+	TetrominoOrientation o[4];
+} TetrominoData;
+
+typedef struct
+{
 	Position p;
-	UBYTE t; // index to tetromino
-	UBYTE o; // index to orientation
+	UBYTE t;
+	UBYTE o;
 } Tetromino;
 
 typedef struct
 {
-  Brick grid[17][10];
+  Brick grid[PLG_HEIGHT][PLG_WIDTH];
 } Playground;
 
 typedef struct

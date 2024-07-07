@@ -14,17 +14,24 @@ static struct SimpleSprite tetromino_sprite[NUM_SPRITES];
 static BrickImage __chip brick_image[NUM_SPRITES];
 static UWORD brick_bitmap[BRICK_LEN];
 static GameState game_state = GS_BEFORE;
-static TetraminoRenderer tetromino[7][4];
 static Tetromino current = {{3,1}, {0}, {0}};
 static TimeVal_Type prev_tick;
 static TimeVal_Type prev_move;
-static TimeVal_Type move_tv = {0L, 200000L};
+static const TimeVal_Type move_tv = {0L, 200000};
 static Game game;
-static Level level[] = {
+static const Level level[] = {
 	{{1L, 0L}, 1000},
-	{{0L, 800000L}, 2000},
-	{{0L, 650000L}, 3000},
-	{{0L, 500000L}, 4000}
+	{{0L, 800000}, 2000},
+	{{0L, 650000}, 3000},
+	{{0L, 500000}, 4000}
+};
+static const TetrominoData tetromino[] = {
+	{{
+		{{{1,1},{1,2},{1,1},{0,0}},0,2},
+		{{{1,1},{0,3},{0,0},{0,0}},0,1},
+		{{{1,1},{0,2},{1,1},{0,0}},0,2},
+		{{{0,0},{0,3},{1,1},{0,0}},1,2}
+	}}
 };
 
 /*
@@ -35,10 +42,6 @@ static VOID exit_handler(VOID);
 static VOID init_sprites(VOID);
 static VOID render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y);
 static VOID render_tetromino(VOID);
-static VOID render_T0(UBYTE x, UBYTE y);
-static VOID render_T1(UBYTE x, UBYTE y);
-static VOID render_T2(UBYTE x, UBYTE y);
-static VOID render_T3(UBYTE x, UBYTE y);
 
 /*
  * Public functions
@@ -50,11 +53,6 @@ void init_game(ViewPort* vp)
 	viewport = vp;
 
 	init_sprites();
-
-	tetromino[0][0] = render_T0;
-	tetromino[0][1] = render_T1;
-	tetromino[0][2] = render_T2;
-	tetromino[0][3] = render_T3;
 }
 
 void render_frame(InputState* input_state)
@@ -78,16 +76,32 @@ void render_frame(InputState* input_state)
 
 				if(CmpTime(&move_tv, &ts) > 0)
 				{
+					// horizontal move
 					current.p.x += input_state->h_val;
 
+					// rotation
 					if(input_state->v_val < 0)
 					{
 						current.o -= input_state->v_val;
 						current.o &= 3;
 					}
-					else
+					// vertical move
+					else if(input_state->v_val > 0)
 					{
 						current.p.y += input_state->v_val;
+						if(current.p.y >= PLG_HEIGHT)
+							current.p.y -= 1;
+					}
+
+					// wall collision
+					if(current.p.x + tetromino[current.t].o[current.o].first < 0)
+					{
+						current.p.x += 1;
+					}
+					else if(current.p.x + tetromino[current.t].o[current.o].last >=
+						PLG_WIDTH)
+					{
+						current.p.x -= 1;
 					}
 
 					render_tetromino();
@@ -100,6 +114,21 @@ void render_frame(InputState* input_state)
 				prev_move.tv_secs = 0L;
 				prev_move.tv_micro = 0L;
 			}
+
+			GetSysTime(&ts);
+			SubTime(&ts, &prev_tick);
+
+			if(CmpTime(&level[game.level].speed, &ts) > 0)
+			{
+				current.p.y += 1;
+				if(current.p.y >= PLG_HEIGHT)
+					current.p.y -= 1;
+
+				render_tetromino();
+
+				AddTime(&prev_tick, &ts);
+			}
+
 			break;
 
 		case GS_PAUSE:
@@ -211,35 +240,15 @@ static void render_sprite(UBYTE sp, UBYTE h, UBYTE x, UBYTE y)
 
 static VOID render_tetromino(VOID)
 {
-	tetromino[current.t][current.o](current.p.x, current.p.y);
-}
-
-static void render_T0(UBYTE x, UBYTE y)
-{
-	render_sprite(0, 1, x, y+1);
-	render_sprite(1, 2, x+1, y+1);
-	render_sprite(2, 1, x+2, y+1);
-}
-
-static void render_T1(UBYTE x, UBYTE y)
-{
-	render_sprite(0, 1, x, y+1);
-	render_sprite(1, 3, x+1, y);
-	render_sprite(2, 0, x+2, y);
-}
-
-static void render_T2(UBYTE x, UBYTE y)
-{
-	render_sprite(0, 1, x, y+1);
-	render_sprite(1, 2, x+1, y);
-	render_sprite(2, 1, x+2, y+1);
-}
-
-static void render_T3(UBYTE x, UBYTE y)
-{
-	render_sprite(0, 0, x, y);
-	render_sprite(1, 3, x+1, y);
-	render_sprite(2, 1, x+2, y+1);
+	int i;
+	for(i = 0; i < 4; i++)
+	{
+		render_sprite(i,
+			tetromino[current.t].o[current.o].c[i].height,
+			current.p.x + i,
+			current.p.y + tetromino[current.t].o[current.o].c[i].start
+		);
+	}
 }
 
 static void exit_handler(void)
