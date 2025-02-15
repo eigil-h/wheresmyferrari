@@ -1,43 +1,25 @@
+#include <proto/exec.h>
+#include <proto/graphics.h>
+#include <libraries/keymap.h>
+#include <stdlib.h>
 #include "datatypes.h"
-#include "utils.h"
-#include "view.h"
-#include "io.h"
 #include "input.h"
 #include "timer.h"
-#include "game_tetris.h"
-
-#include <libraries/keymap.h>
-
-#include <proto/exec.h>
-#include <proto/dos.h>
-#include <proto/graphics.h>
-
-#include <stdio.h>
-#include <stdlib.h>
+#include "tetris/fx.h"
+#include "tetris/game.h"
 
 /*
  * Protos
  */
-static void main_turbo(struct MsgPort*);
-static void exit_handler(void);
-
-/*
- * Private objects
- */
-static Error error;
-static ViewRequest* view_request;
-static PictureData* bg_data;
-static PictureData* brick_data;
+static void main_turbo(MsgPort*);
 
 /*
  * Public
  */
 int main(void)
 {
-	struct MsgPort* input_port;
-	ViewPort* viewport;
-
-	atexit(exit_handler);
+	MsgPort* input_port;
+	LONG error;
 
 	if(!(input_port = setup_input_handler()))
 	{
@@ -46,47 +28,23 @@ int main(void)
 
 	open_timer_device();
 
-	if(!(bg_data = load_picture("TetBG", &error)))
+	if(error = prepare_fx())
 	{
-		exit(EXIT_FAILURE);
+		exit(error);
 	}
-
-	if(!(brick_data = load_picture("brick", &error)))
-	{
-		exit(EXIT_FAILURE);
-	}
-
-	if(!(view_request = prepare_gfx(bg_data, brick_data, &error)))
-	{
-		exit(EXIT_FAILURE);
-	}
-
-	free_picture_data(&brick_data);
-	free_picture_data(&bg_data);
-
-	viewport = make_view(view_request);
-
-	if(!viewport)
-	{
-		exit(EXIT_FAILURE);
-	}
-
-	init_game(viewport);
 
 	main_turbo(input_port);
-
-	exit(EXIT_SUCCESS);
 }
 
 /*
  * Private
  */
-static void main_turbo(struct MsgPort* input_port)
+static void main_turbo(MsgPort* input_port)
 {
-	BOOL not_done = TRUE;
+	BOOL game_on = TRUE;
 	InputState ist = {0};
 
-	while(not_done)
+	while(game_on)
 	{
 		CustomInputEvent* iev;
 
@@ -101,7 +59,7 @@ static void main_turbo(struct MsgPort* input_port)
 						break;
 							
 					case RAWKEY_ESC:
-						not_done = FALSE;
+						game_on = FALSE;
 						break;
 
 					case RAWKEY_CRSRUP:
@@ -143,15 +101,4 @@ static void main_turbo(struct MsgPort* input_port)
 
 		WaitTOF();
 	}
-}
-
-static void exit_handler(void)
-{
-
-	free_picture_data(&brick_data);
-	free_picture_data(&bg_data);
-	free_view_request(view_request);
-
-	if(error.code)
-		printf("%d, %s\n", error.code, error.msg);
 }

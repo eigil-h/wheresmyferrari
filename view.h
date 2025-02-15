@@ -3,6 +3,16 @@
 
 #include "datatypes.h"
 
+typedef struct
+{
+  UWORD width;
+  UWORD height;
+  UBYTE depth;
+  UBYTE pad[3];
+  Palette32 palette;
+  BitMap* viewport_bitmap;
+} ViewRequest;
+
 //Checking chipset OCS, ECS, AGA
 //(GfxBase->ChipRevBits0 & GFXF_HR_AGNUS)
 //(GfxBase->ChipRevBits0 & GFXF_HR_DENISE)

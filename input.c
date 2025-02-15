@@ -95,20 +95,23 @@ static ULONG __regargs input_handler(
 				sizeof(CustomInputEvent),
 				MEMF_PUBLIC | MEMF_CLEAR);
 
-			msg->message.mn_Node.ln_Type = NT_MESSAGE;
-      msg->message.mn_Length = sizeof(CustomInputEvent);
-      msg->class = current->ie_Class;
-      msg->sub_class = current->ie_SubClass;
-      msg->code = current->ie_Code;
-      msg->qualifier = current->ie_Qualifier;
+			if(msg)
+			{
+				msg->message.mn_Node.ln_Type = NT_MESSAGE;
+	      msg->message.mn_Length = sizeof(CustomInputEvent);
+	      msg->class = current->ie_Class;
+	      msg->sub_class = current->ie_SubClass;
+	      msg->code = current->ie_Code;
+	      msg->qualifier = current->ie_Qualifier;
 
-      if(current->ie_Class == IECLASS_RAWMOUSE)
-      {
-        msg->x = current->ie_X;
-        msg->y = current->ie_Y;
-      }
+	      if(current->ie_Class == IECLASS_RAWMOUSE)
+	      {
+	        msg->x = current->ie_X;
+	        msg->y = current->ie_Y;
+	      }
 
-      PutMsg(receiver_msg_port, (struct Message*) msg);
+	      PutMsg(receiver_msg_port, (struct Message*) msg);
+			}
 		}
 
 		current = current->ie_NextEvent;

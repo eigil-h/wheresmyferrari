@@ -53,7 +53,7 @@ ViewPort* make_view(ViewRequest* view_request)
 		exit(VIEW_ERROR_OPEN_MONITOR);
 	}
 
-	rasinfo.BitMap = view_request->bg_bitmap;
+	rasinfo.BitMap = view_request->viewport_bitmap;
 
 	InitVPort(&viewport);
 	view.ViewPort = &viewport;
@@ -86,7 +86,7 @@ ViewPort* make_view(ViewRequest* view_request)
 
 	// viewport.Modes = (UWORD) (mode_id & 0x0000ffff); - 1.3 stuff??
 
-	if(!(colormap = GetColorMap(view_request->palette4.length))) {
+	if(!(colormap = GetColorMap(1 << view_request->depth))) {
 		exit(VIEW_ERROR_COLORMAP);
 	}
 
@@ -99,10 +99,7 @@ ViewPort* make_view(ViewRequest* view_request)
 		exit(VIEW_ERROR_VIDEOCONTROL);
 	}
 
-	LoadRGB4(&viewport,
-		view_request->palette4.data,
-		view_request->palette4.length
-	);
+	LoadRGB32(&viewport, view_request->palette);
 
 	if(MakeVPort(&view, &viewport) != MVP_OK) {
 		exit(VIEW_ERROR_MAKEVPORT);

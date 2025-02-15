@@ -2,163 +2,165 @@
 #include <proto/iffparse.h>
 #include <proto/dos.h>
 #include <proto/graphics.h>
-#include <datatypes/pictureclass.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils.h"
+#include "datatypes.h"
 #include "io.h"
+
+#define BYTES_PER_ROW(w,d) (((((ULONG)(w) + 15) >> 3) & 0xFFFE) * (d))
 
 /*
  * Protos
  */
-static VOID mk_palette(
+static BOOL validate(ILBMData*, PictureData*);
+static VOID cmap_to_palette32(
   const UBYTE* cmap_data,
   const ULONG size,
-  Palette32* palette
+  Palette32 palette
 );
-static void decompress(
+static VOID decompress(
 	const UBYTE* source,
 	UBYTE* destination,
 	const size_t compressed_size,
 	const size_t decompressed_size);
-static void free_io(struct IFFHandle*);
-static void print_bmhd(const struct BitMapHeader*);
-static void print_cmap(const UBYTE* cmap, const ULONG size);
+static VOID free_io(IFFHandle*);
+static BOOL clean_return(IFFHandle*, CONST_STRPTR, LONG);
+static VOID print_ilbm_data(ILBMData*);
 
 /*
  * Public
  */
-PictureData* load_picture(CONST_STRPTR file_name, Error* err)
+BOOL load_picture(CONST_STRPTR path, PictureData* picture_data)
 {
-	PictureData* picture_data = NULL;
-	struct IFFHandle* iff_handle = NULL;
-	struct BitMapHeader* bmhd = NULL;
-	UBYTE* cmap = NULL;
-	ULONG cmap_size;
-	UBYTE* body = NULL;
-	ULONG body_size;
+	IFFHandle* iff_handle;
+	ILBMData ilbm_data = {0};
 	LONG error;
 
-	if(!(iff_handle = AllocIFF())) {
-		err->code = -101;
-		err->msg = "@AllocIFF";
-		return NULL;
+	if(!(iff_handle = AllocIFF()))
+	{
+		return clean_return(iff_handle, "AllocIFF", ERROR_ALLOC_IFF);
 	}
 
-	if(!(iff_handle->iff_Stream = Open(file_name, MODE_OLDFILE))) {
-		free_io(iff_handle);
-		err->code = -102;
-		err->msg = "@Open";
-		return NULL;
+	if(!(iff_handle->iff_Stream = Open(path, MODE_OLDFILE)))
+	{
+		return clean_return(iff_handle, "Open file", ERROR_OPEN_FILE);
 	}
 
 	InitIFFasDOS(iff_handle);
 
-	if(error = OpenIFF(iff_handle, IFFF_READ)) {
-		free_io(iff_handle);
-		err->code = error;
-		err->msg = "@OpenIFF";
-		return NULL;
+	if(error = OpenIFF(iff_handle, IFFF_READ))
+	{
+		return clean_return(iff_handle, "OpenIFF", error);
 	}
 
-	if(error = PropChunk(iff_handle, ID_ILBM, ID_BMHD)) {
-		free_io(iff_handle);
-		err->code = error;
-		return NULL;
+	if(error = PropChunk(iff_handle, ID_ILBM, ID_BMHD))
+	{
+		return clean_return(iff_handle, "PropChunk bmhd", error);
 	}
 
-	if(error = PropChunk(iff_handle, ID_ILBM, ID_CMAP)) {
-		free_io(iff_handle);
-		err->code = error;
-		return NULL;
+	if(error = PropChunk(iff_handle, ID_ILBM, ID_CMAP))
+	{
+		return clean_return(iff_handle, "PropChunk cmap", error);
 	}
 
-	if(error = PropChunk(iff_handle, ID_ILBM, ID_BODY)) {
-		free_io(iff_handle);
-		err->code = error;
-		return NULL;
+	if(error = PropChunk(iff_handle, ID_ILBM, ID_BODY))
+	{
+		return clean_return(iff_handle, "PropChunk body", error);
 	}
 
 	StopOnExit(iff_handle, ID_ILBM, ID_FORM);
 
-	if((error = ParseIFF(iff_handle, IFFPARSE_SCAN)) == IFFERR_EOC) {
+	if((error = ParseIFF(iff_handle, IFFPARSE_SCAN)) == IFFERR_EOC)
+	{
 		struct StoredProperty* sp;
 
-		if(sp = FindProp(iff_handle, ID_ILBM, ID_BMHD)) {
-			bmhd = (struct BitMapHeader*) sp->sp_Data;
+		if(sp = FindProp(iff_handle, ID_ILBM, ID_BMHD))
+		{
+			ilbm_data.bmhd = (BitMapHeader*) sp->sp_Data;
 		}
 
-		if(sp = FindProp(iff_handle, ID_ILBM, ID_CMAP)) {
-			cmap = (UBYTE *) sp->sp_Data;
-			cmap_size = sp->sp_Size;
+		if(sp = FindProp(iff_handle, ID_ILBM, ID_CMAP))
+		{
+			ilbm_data.cmap = (UBYTE *) sp->sp_Data;
+			ilbm_data.cmap_size = sp->sp_Size;
 		}
 
-		if(sp = FindProp(iff_handle, ID_ILBM, ID_BODY)) {
-			body = (UBYTE *) sp->sp_Data;
-			body_size = sp->sp_Size;
+		if(sp = FindProp(iff_handle, ID_ILBM, ID_BODY))
+		{
+			ilbm_data.body = (UBYTE *) sp->sp_Data;
+			ilbm_data.body_size = sp->sp_Size;
 		}
-	} else {
-		err->code = error;
-		err->msg = "@ParseIFF";
+	}
+	else
+	{
+		return clean_return(iff_handle, "ParseIFF", error);
 	}
 
-	if(bmhd && cmap && body) {
-		if(bmhd->bmh_Masking == mskHasMask ||
-			bmhd->bmh_Masking == mskHasAlpha) {
-			err->code = bmhd->bmh_Masking;
-			err->msg = "This mask is not supported";
-		} else {
-			BOOL body_compressed = (BOOL) bmhd->bmh_Compression;
-
-			picture_data = alloc_picture_data(
-				bmhd->bmh_Width,
-				bmhd->bmh_Height,
-				bmhd->bmh_Depth
-			);
-
-			mk_palette(cmap, cmap_size, &picture_data->palette);
-
-			if(body_compressed) {
-				decompress(
-					body,
-					picture_data->data,
-					body_size,
-					picture_data->depth *
-						RASSIZE(picture_data->width, picture_data->height)
-				);
-			} else {
-				memcpy(picture_data->data, body, body_size);
-			}
-		}
-
-		// print_bmhd(bmhd);
-		// print_cmap(cmap, cmap_size);
+	if(!validate(&ilbm_data, picture_data))
+	{
+		return clean_return(iff_handle, "validate", INVALID_FORMAT);
 	}
 
-	free_io(iff_handle);
+	if(ilbm_data.bmhd->bmh_Masking == mskHasMask ||
+		ilbm_data.bmhd->bmh_Masking == mskHasAlpha)
+	{
+		// not supported until I understand what this is
+		return clean_return(iff_handle, "Masking", UNKNOWN_FORMAT);
+	}
 
-	return picture_data;
+	cmap_to_palette32(
+		ilbm_data.cmap,
+		ilbm_data.cmap_size,
+		picture_data->palette);
+
+	if(ilbm_data.bmhd->bmh_Compression)
+	{
+		decompress(
+			ilbm_data.body,
+			picture_data->bitmap->Planes[0],
+			ilbm_data.body_size,
+			ilbm_data.bmhd->bmh_Depth *
+				RASSIZE(ilbm_data.bmhd->bmh_Width,
+								ilbm_data.bmhd->bmh_Height)
+		);
+	}
+	else
+	{
+		memcpy(picture_data->bitmap->Planes[0], ilbm_data.body, ilbm_data.body_size);
+	}
+
+	return clean_return(iff_handle, "", 0);
 }
+
 
 /*
  * Private
  */
-static VOID mk_palette(
+static BOOL validate(ILBMData* id, PictureData* pd)
+{
+	return (BOOL) ((id->bmhd && id->cmap && id->body) &&
+		(id->bmhd->bmh_Width == pd->width) &&
+		(id->bmhd->bmh_Height == pd->height) &&
+		(id->bmhd->bmh_Depth == pd->depth) &&
+		(id->cmap_size == (3 * (1 << pd->depth))));
+}
+
+static VOID cmap_to_palette32(
   const UBYTE* cmap_data,
-  const ULONG size,
-  Palette32* palette
+  const ULONG length,
+  Palette32 palette
 )
 {
-	ULONG palette_length = size / 3;
-	int i;
+	unsigned i;
 
-	for (i = 0; i < palette_length; i++) {
-		UBYTE red = cmap_data[i * 3];
-    UBYTE green = cmap_data[i * 3 + 1];
-    UBYTE blue = cmap_data[i * 3 + 2];
-    palette->data[i] = (red << 16) | (green << 8) | blue;
+	*palette++ = (length/3) << 16;
+
+	for (i = 0; i < length; i++) {
+		*palette++ = (*cmap_data++ << 24) & 0xFFFFFFFF; //todo: why and (&)?
   }
+
+	*palette = 0L;
 }
 
 static void decompress(
@@ -187,9 +189,10 @@ static void decompress(
   }
 }
 
-static void free_io(struct IFFHandle* iff_handle)
+static VOID free_io(struct IFFHandle* iff_handle)
 {
-	if(iff_handle) {
+	if(iff_handle)
+	{
 		CloseIFF(iff_handle);
 		if(iff_handle->iff_Stream)
 			Close(iff_handle->iff_Stream);
@@ -197,32 +200,42 @@ static void free_io(struct IFFHandle* iff_handle)
 	}
 }
 
-static void print_bmhd(const struct BitMapHeader* bmhd)
+static BOOL clean_return(IFFHandle* iff_handle, CONST_STRPTR msg, LONG err)
 {
-	printf(
-		"bitmap header:\nW:%d\nH:%d\nL:%d\nT:%d\nD:%d\nM:%d\nC:%d\nTC:%d\nXA:%d\nYA:%d\nPW:%d\nPH:%d\n",
-		bmhd->bmh_Width,
-		bmhd->bmh_Height,
-		bmhd->bmh_Left,
-		bmhd->bmh_Top,
-		bmhd->bmh_Depth,
-		bmhd->bmh_Masking,
-		bmhd->bmh_Compression,
-		bmhd->bmh_Transparent,
-		bmhd->bmh_XAspect,
-		bmhd->bmh_YAspect,
-		bmhd->bmh_PageWidth,
-		bmhd->bmh_PageHeight
-	);
-  puts("");
+	free_io(iff_handle);
+
+	if(err != 0)
+	{
+		printf("%s: %d\n", msg, err);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
-static void print_cmap(const UBYTE* data, const ULONG size)
+static VOID print_ilbm_data(ILBMData* d)
 {
-	int i;
+	printf("0x%08lx\n0x%08lx\n%d\n0x%08lx\n%d\n",
+		d->bmhd,
+		d->cmap,
+		d->cmap_size,
+		d->body,
+		d->body_size);
 
-	for(i = 0; i < size/3; i++) {
-		printf("#%02x%02x%02x\n", *data++, *data++, *data++);
+	if(d->bmhd)
+	{
+		printf("%d %d %d %d %d\n%d %d %d\n%d %d %d %d\n",
+			d->bmhd->bmh_Width,
+			d->bmhd->bmh_Height,
+			d->bmhd->bmh_Left,
+			d->bmhd->bmh_Top,
+			d->bmhd->bmh_Depth,
+			d->bmhd->bmh_Masking,
+			d->bmhd->bmh_Compression,
+			d->bmhd->bmh_Transparent,
+			d->bmhd->bmh_XAspect,
+			d->bmhd->bmh_YAspect,
+			d->bmhd->bmh_PageWidth,
+			d->bmhd->bmh_PageHeight);
 	}
-  puts("");
 }
